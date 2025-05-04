@@ -38,4 +38,25 @@ class AssetConfig {
       'icons/profile/settings.png',
     ],
   };
+
+  static const Map<String, List<String>> demoAssetsTest = {
+    'lobby': [
+      'id/1',
+      'id/2',
+      'id/3',
+    ],
+    'cashier': [
+      'id/4',
+      'id/5',
+    ],
+    'games': [
+      'id/6',
+      'id/7',
+      'id/8',
+    ],
+    'profile': [
+      'id/9',
+      'id/10',
+    ],
+  };
 }

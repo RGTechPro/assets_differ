@@ -19,7 +19,7 @@ class AssetRepository {
     await Future.delayed(const Duration(seconds: 1));
     
     // Create a dummy response based on the module name
-    final moduleAssets = AssetConfig.demoAssets[moduleName] ?? [];
+    final moduleAssets = AssetConfig.demoAssetsTest[moduleName] ?? [];
     
     if (moduleAssets.isEmpty) {
       return false;
@@ -30,7 +30,7 @@ class AssetRepository {
       return CdnAsset(
         path: '$moduleName/$assetPath',
         hash: '${DateTime.now().millisecondsSinceEpoch}',
-        url: 'https://picsum.photos/seed/${Uri.encodeComponent(assetPath)}/300/300',
+        url: 'https://picsum.photos/${Uri.encodeComponent(assetPath)}/300/300',
         priority: moduleAssets.indexOf(assetPath),
       );
     }).toList();

@@ -144,7 +144,7 @@ class _ModuleAssetsScreenState extends State<ModuleAssetsScreen> {
   }
   
   Widget _buildAssetGrid() {
-    final assetList = AssetConfig.demoAssets[widget.moduleName] ?? [];
+    final assetList = AssetConfig.demoAssetsTest[widget.moduleName] ?? [];
     
     if (assetList.isEmpty) {
       return const Center(
