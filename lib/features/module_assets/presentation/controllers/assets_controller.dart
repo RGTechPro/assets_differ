@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../domain/usecases/get_dummy_assets_usecase.dart';
 
 class DummyAssets {
   final List<String> p0AssetList;
@@ -13,22 +14,29 @@ class DummyAssets {
 }
 
 class AssetsController extends GetxController {
-  final Rx<DummyAssets> dummyAssets = DummyAssets(
-    p0AssetList: [
-      'https://cdn.example.com/assets/v1.0.0/images/logo.png',
-      'https://cdn.example.com/assets/v2.0.0/images/logo.png',
-    ],
-    p1AssetList: [
-      'https://cdn.example.com/assets/v1.0.0/icons/menu/menu_icon.png',
-      'https://cdn.example.com/assets/v2.0.0/icons/menu/menu_icon.png',
-    ],
-    p2AssetList: [
-      'https://cdn.example.com/assets/v1.0.0/banners/home/banner1.jpg',
-      'https://cdn.example.com/assets/v2.0.0/banners/home/banner1.jpg',
-    ],
-  ).obs;
+  final GetDummyAssetsUseCase _getDummyAssetsUseCase;
+  late final AssetsControllerUIState state;
 
-  void updateAssets(DummyAssets newAssets) {
-    dummyAssets.value = newAssets;
+  AssetsController({
+    required GetDummyAssetsUseCase getDummyAssetsUseCase,
+  })  : _getDummyAssetsUseCase = getDummyAssetsUseCase,
+        state = AssetsControllerUIState(
+            dummyAssets: DummyAssets(
+          p0AssetList: [],
+          p1AssetList: [],
+          p2AssetList: [],
+        ).obs) {
+    // Initialize assets asynchronously
+    _initAssets();
   }
+
+  Future<void> _initAssets() async {
+    state.dummyAssets = await _getDummyAssetsUseCase.execute();
+  }
+}
+
+class AssetsControllerUIState {
+  Rx<DummyAssets> dummyAssets;
+
+  AssetsControllerUIState({required this.dummyAssets});
 }

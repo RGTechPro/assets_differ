@@ -1,6 +1,8 @@
 import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/managers/asset_module_provider.dart';
 import 'package:assets_differ/core/services/asset_service.dart';
+import 'package:assets_differ/features/module_assets/data/asset_repository.dart';
+import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -104,17 +106,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildModuleList(AssetModuleProvider provider) {
-  
     
     return Column(
       children: [
         ElevatedButton(
             onPressed: () {
-                // Initialize AssetsController
-              final assetsController = Get.put(AssetsController());
+                // // Initialize bindings for proper dependency injection
+                // Get.put(provider.assetService);
+                // Get.lazyPut(() => AssetRepository(Get.find<AssetService>()));
+                
+                // Use ModuleAssetsBindings to properly inject dependencies
+                final bindings = ModuleAssetsBindings();
+                bindings.dependencies();
+                
+                // Now we can safely find the controller with all dependencies injected
+                final assetsController = Get.find<AssetsController>();
 
-
-              Get.to(() => NewScreen());
+                Get.to(() => NewScreen());
             },
             child: const Text("demo")),
         Expanded(
@@ -157,56 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-final v1Json = {
-  "version": "1.0.0",
-  "module": "lobby",
-  "assets": [
-    {
-      "path": "images/logo.png",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/images/logo.png",
-      "priority": 0
-    },
-    {
-      "path": "icons/menu/menu_icon.png",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/icons/menu/menu_icon.png",
-      "priority": 1
-    },
-    {
-      "path": "banners/home/banner1.jpg",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/banners/home/banner1.jpg",
-      "priority": 2
-    }
-  ]
-};
-
-final v2Json = {
-  "version": "1.0.0",
-  "module": "lobby",
-  "assets": [
-    {
-      "path": "images/logo.png",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/images/logo.png",
-      "priority": 0
-    },
-    {
-      "path": "icons/menu/menu_icon.png",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/icons/menu/menu_icon.png",
-      "priority": 1
-    },
-    {
-      "path": "banners/home/banner1.jpg",
-      "hash": "<commit hash>",
-      "url": "https://cdn.example.com/assets/v1.0.0/banners/home/banner1.jpg",
-      "priority": 2
-    }
-  ]
-};
 
 
 class DummyAssets {
