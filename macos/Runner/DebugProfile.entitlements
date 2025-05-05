@@ -8,5 +8,8 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<!-- Add to both macos/Runner/DebugProfile.entitlements and macos/Runner/Release.entitlements -->
+    <key>com.apple.security.network.client</key>
+    <true/>
 </dict>
 </plist>
