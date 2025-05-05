@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:assets_differ/core/services/file_storage_service.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'repository/repository_interface.dart';
@@ -145,32 +145,42 @@ class DummyDataRepository implements BaseAssetRepository {
   
   @override
   Future<void> deleteAssetByPath(String path) async {
-    // Simulate deleting an asset
-    return Future.delayed(const Duration(milliseconds: 500), () {
-      // In a real implementation, this would delete a file
-      print('Asset deleted: $path');
-      // No actual deletion in dummy implementation
-    });
+    try {
+      final result = await FileStorageService.instance.deleteAssetByPath(path);
+      if (result) {
+        print('Asset deleted successfully: $path');
+      } else {
+        print('Asset not found or could not be deleted: $path');
+      }
+    } catch (e) {
+      print('Error deleting asset: $e');
+    }
   }
   
   @override
   Future<String> getAssetByPath(String path) async {
-    // Simulate fetching asset data
-    return Future.delayed(const Duration(milliseconds: 500), () {
-      // In a real implementation, this would read from storage
-      // Return a dummy asset content based on the path
-      return 'Mock content for asset: $path';
-    });
+    try {
+      final data = await FileStorageService.instance.getAssetByPath(path);
+      if (data.isNotEmpty) {
+        return data;
+      } else {
+        print('Asset not found: $path');
+        return '';
+      }
+    } catch (e) {
+      print('Error retrieving asset: $e');
+      return '';
+    }
   }
   
   @override
   Future<void> saveAssetByPath(String path, String data) async {
-    // Simulate saving asset data
-    return Future.delayed(const Duration(milliseconds: 500), () {
-      // In a real implementation, this would write to storage
-      print('Asset saved: $path');
+    try {
+      await FileStorageService.instance.saveAssetByPath(path, data);
+      print('Asset saved successfully: $path');
       print('Data size: ${data.length} bytes');
-      // No actual saving in dummy implementation
-    });
+    } catch (e) {
+      print('Error saving asset: $e');
+    }
   }
 }
