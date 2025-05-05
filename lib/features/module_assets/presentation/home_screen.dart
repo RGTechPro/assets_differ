@@ -1,8 +1,9 @@
 import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/managers/asset_module_provider.dart';
 import 'package:assets_differ/core/services/asset_service.dart';
+import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:rxdart/rxdart.dart';
+import 'package:get/get.dart';
 import 'module_assets_screen.dart';
 
 /// Home screen that lists available modules
@@ -103,16 +104,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildModuleList(AssetModuleProvider provider) {
+  
+    
     return Column(
       children: [
         ElevatedButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NewScreen(),
-                ),
-              );
+                // Initialize AssetsController
+              final assetsController = Get.put(AssetsController());
+
+
+              Get.to(() => NewScreen());
             },
             child: const Text("demo")),
         Expanded(
@@ -220,51 +222,60 @@ class DummyAssets {
 }
 
 class NewScreen extends StatelessWidget {
-  const NewScreen({
-    Key? key,
-    required this.dummyAssets,
-  }) : super(key: key);
-  final Rx<DummyAssets> dummyAssets;
+  NewScreen({Key? key}) : super(key: key);
+
+  // Get the controller
+  final AssetsController assetsController = Get.find<AssetsController>();
 
   @override
   Widget build(BuildContext context) {
-    // final assets = AssetProvider.instance.getSortedByPriority();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Asset Demo'),
       ),
-      body: Column(
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            scrollDirection: Axis.horizontal,
-            itemCount: dummyAssets.p0AssetList.length,
-            itemBuilder: (context, index) {
-              final asset = dummyAssets.p0AssetList[index];
-              return CommonImage(asset: asset);
-            },
-          ),
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            scrollDirection: Axis.horizontal,
-            itemCount: dummyAssets.p1AssetList.length,
-            itemBuilder: (context, index) {
-              final asset = dummyAssets.p1AssetList[index];
-              return CommonImage(asset: asset);
-            },
-          ),
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            scrollDirection: Axis.horizontal,
-            itemCount: dummyAssets.p2AssetList.length,
-            itemBuilder: (context, index) {
-              final asset = dummyAssets.p2AssetList[index];
-              return CommonImage(asset: asset);
-            },
-          ),
-        ],
-      ),
+      body: Obx(() {
+        final dummyAssets = assetsController.dummyAssets.value;
+        return Column(
+          children: [
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                scrollDirection: Axis.horizontal,
+                itemCount: dummyAssets.p0AssetList.length,
+                itemBuilder: (context, index) {
+                  final asset = dummyAssets.p0AssetList[index];
+                  return CommonImage(asset: asset, priority: 0);
+                },
+              ),
+            ),
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                scrollDirection: Axis.horizontal,
+                itemCount: dummyAssets.p1AssetList.length,
+                itemBuilder: (context, index) {
+                  final asset = dummyAssets.p1AssetList[index];
+                  return CommonImage(asset: asset, priority: 1);
+                },
+              ),
+            ),
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                scrollDirection: Axis.horizontal,
+                itemCount: dummyAssets.p2AssetList.length,
+                itemBuilder: (context, index) {
+                  final asset = dummyAssets.p2AssetList[index];
+                  return CommonImage(asset: asset, priority: 2);
+                },
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
@@ -273,9 +284,11 @@ class CommonImage extends StatelessWidget {
   const CommonImage({
     super.key,
     required this.asset,
+    required this.priority,
   });
 
   final String asset;
+  final int priority;
 
   @override
   Widget build(BuildContext context) {
@@ -286,18 +299,15 @@ class CommonImage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Priority: 0',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              'Priority: $priority',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Center(
               child: Image.network(
                 asset,
                 height: 150,
-                // errorBuilder: (_, __, ___) => Image.network(
-                //   'https://via.placeholder.com/150?text=${Uri.encodeComponent(asset.displayName)}',
-                // ),
               ),
             ),
           ],

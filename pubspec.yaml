@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   http: ^1.1.0  # For network requests to download assets
   path_provider: ^2.1.1  # For accessing app document directory to store assets
+  get: ^4.6.5  # Adding GetX for state management
 
 dev_dependencies:
   flutter_test:
