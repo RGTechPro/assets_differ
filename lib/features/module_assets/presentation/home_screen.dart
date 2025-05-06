@@ -192,10 +192,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
-  assetsController = Get.find<AssetsController>();
+    assetsController = Get.find<AssetsController>();
 
     super.initState();
-assetsController.onInit();  }
+    assetsController.onInit();
+  }
 
   // Future<void> _initAssetsAndNavigate() async {
   //   // Initialize bindings for proper dependency injection
@@ -204,10 +205,10 @@ assetsController.onInit();  }
 
   //   // Get the controller with all dependencies injected
   //   assetsController = Get.find<AssetsController>();
-    
+
   //   // Start loading assets (non-awaited as requested)
   //   assetsController._getDummyAssetsUseCase.execute();
-    
+
   //   // Wait only for P0 assets to complete before navigating
   //   assetsController._getDummyAssetsUseCase.isP0Completed.then((_) {
   //     // Navigate to P0 assets screen once P0 is loaded
@@ -245,7 +246,7 @@ class P0AssetsScreen extends StatelessWidget {
 
   // Get the controller
   final AssetsController assetsController = Get.find<AssetsController>();
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,7 +267,8 @@ class P0AssetsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 itemCount: 1,
                 itemBuilder: (context, index) {
-                  final asset = "images/logo.png"; // Placeholder for actual asset
+                  final asset = assetsController.state.p0Section!.asset
+                      .value; // Updated to use the asset value
                   return ImageCard(
                     asset: asset,
                     title: assetsController.state.p0Section!.title,
@@ -275,7 +277,7 @@ class P0AssetsScreen extends StatelessWidget {
               );
             }),
           ),
-          
+
           // Navigation buttons
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -297,12 +299,12 @@ class P0AssetsScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Loading indicator for P1 and P2 assets
           Obx(() {
             // Show loading indicator for P1/P2 assets if they're not yet loaded
-            if ((assetsController.state.p1Section?.assetList.isEmpty ?? true) ||
-                (assetsController.state.p2Section?.assetList.isEmpty ?? true)) {
+            if ((assetsController.state.p1Section?.asset.isEmpty ?? true) ||
+                (assetsController.state.p2Section?.asset.isEmpty ?? true)) {
               return const Padding(
                 padding: EdgeInsets.only(bottom: 16.0),
                 child: Column(
@@ -339,32 +341,27 @@ class P1AssetsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('P1 Assets - Important'),
       ),
-      body: Obx(() {
-        if (assetsController.state.p1Section?.assetList.isEmpty ?? true) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 20),
-                Text('Loading P1 assets...'),
-              ],
-            ),
-          );
-        }
-        
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: assetsController.state.p1Section!.assetList.length,
-          itemBuilder: (context, index) {
-            final asset = assetsController.state.p1Section!.assetList[index];
-            return ImageCard(
-              asset: asset,
-              title: assetsController.state.p1Section!.title,
+      body: Obx(
+        () {
+          if (assetsController.state.p1Section?.asset.isEmpty ?? true) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text('Loading P1 assets...'),
+                ],
+              ),
             );
-          },
-        );
-      }),
+          }
+
+          return ImageCard(
+            asset: assetsController.state.p1Section!.asset.value,
+            title: assetsController.state.p1Section!.title,
+          );
+        },
+      ),
     );
   }
 }
@@ -383,7 +380,7 @@ class P2AssetsScreen extends StatelessWidget {
         title: const Text('P2 Assets - Optional'),
       ),
       body: Obx(() {
-        if (assetsController.state.p2Section?.assetList.isEmpty ?? true) {
+        if (assetsController.state.p2Section?.asset.isEmpty ?? true) {
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -395,17 +392,10 @@ class P2AssetsScreen extends StatelessWidget {
             ),
           );
         }
-        
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: assetsController.state.p2Section!.assetList.length,
-          itemBuilder: (context, index) {
-            final asset = assetsController.state.p2Section!.assetList[index];
-            return ImageCard(
-              asset: asset,
-              title: assetsController.state.p2Section!.title,
-            );
-          },
+
+        return ImageCard(
+          asset: assetsController.state.p2Section!.asset.value,
+          title: assetsController.state.p2Section!.title,
         );
       }),
     );
@@ -445,7 +435,7 @@ class ImageCard extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildImage(String source) {
     // Check if the source is a file path (starts with / on macOS/Linux or contains :\ for Windows)
     if (source.startsWith('/') || source.contains(':\\')) {
@@ -459,7 +449,7 @@ class ImageCard extends StatelessWidget {
       );
     }
     // Check if the source is base64 encoded
-    else if (source.startsWith('data:image') || 
+    else if (source.startsWith('data:image') ||
         RegExp(r'^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$')
             .hasMatch(source)) {
       try {
@@ -468,7 +458,7 @@ class ImageCard extends StatelessWidget {
         if (source.contains(',')) {
           base64String = source.split(',')[1];
         }
-        
+
         // Decode base64 to bytes
         final bytes = base64Decode(base64String);
         return Image.memory(
@@ -494,7 +484,7 @@ class ImageCard extends StatelessWidget {
           return Center(
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / 
+                  ? loadingProgress.cumulativeBytesLoaded /
                       loadingProgress.expectedTotalBytes!
                   : null,
             ),

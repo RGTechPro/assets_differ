@@ -23,7 +23,6 @@ class DummyAssets {
 class AssetsController extends GetxController {
   final GetDummyAssetsUseCase _getDummyAssetsUseCase;
   late final AssetsControllerUIState state;
-  final Rx<DummyAssets> _dummyAssets ;
   AssetsController({
     required GetDummyAssetsUseCase getDummyAssetsUseCase,
   })  : _getDummyAssetsUseCase = getDummyAssetsUseCase,
