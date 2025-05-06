@@ -104,7 +104,7 @@ class GetDummyAssetsUseCase {
     final String localPath = await _baseLocalAssetPath();
 
     Map<String, String> p0AssetsMap = {
-      for (var asset in p0Assets) asset.path: localPath + asset.path,
+      for (var asset in remoteManifest.assets.where((e)=>e.priority==0)) asset.path: localPath + asset.path,
     };
 
     final dummyAssets = DummyAssets.fromAssetMap(p0AssetsMap);
@@ -140,9 +140,9 @@ class GetDummyAssetsUseCase {
     final String localPath = await _baseLocalAssetPath();
 
     Map<String, String> assetMap = {
-      for (var asset in p0AssetList) asset.path: localPath + asset.path,
-      for (var asset in p1AssetList) asset.path: localPath + asset.path,
-      for (var asset in p2AssetList) asset.path: localPath + asset.path,
+      for (var asset in remoteManifest.assets.where((e)=>e.priority==0)) asset.path: localPath + asset.path,
+      for (var asset in remoteManifest.assets.where((e)=>e.priority==1)) asset.path: localPath + asset.path,
+      for (var asset in remoteManifest.assets.where((e)=>e.priority==2)) asset.path: localPath + asset.path,
     };
 
     final dummyAssets = DummyAssets.fromAssetMap(assetMap);
