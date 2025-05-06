@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -12,16 +13,28 @@ class GetDummyAssetsUseCase {
   final BaseAssetRepository _repository;
   
   GetDummyAssetsUseCase(this._repository, this._platformInfo);
+
+  final Completer<bool> _p0completer = Completer<bool>();
+
+  Future<bool> get isP0Completed => _p0completer.future;
+
+  final Completer<bool> _p1p2completer = Completer<bool>();
+
+  Future<bool> get isP1P2Completed => _p1p2completer.future;
+
     
 
-  Rx<DummyAssets> dummyAssets = DummyAssets(
-        p0AssetList: [],
-        p1AssetList: [],
-        p2AssetList: [],
-      ).obs;
+  // final Rx<DummyAssets> _dummyAssets = DummyAssets(
+  //       sectionOneAssetList: [],
+  //       sectionTwoAssetList: [],
+  //       sectionThreeAssetList: [],
+  //     ).obs;
+
+  // Rx<DummyAssets> get dummyAssets => _dummyAssets;
+
   
   /// Execute the use case to get DummyAssets as an Observable
-  Future<Rx<DummyAssets>> execute() async {
+  Future<void> execute() async {
     // First, load local manifest to get the current version
     final AssetManifest? localManifest = await _repository.getLocalManifest();
     
@@ -95,16 +108,14 @@ class GetDummyAssetsUseCase {
 
     // Save the new and updated assets to local storage
     await _saveAssetsToLocalStorage(p0Assets);
-    
 
-  
-    
+    _p0completer.complete(true);  
     // Update the observable with new data
-    dummyAssets.value = DummyAssets(
-      p0AssetList: p0Assets,
-      p1AssetList: p1Assets,
-      p2AssetList: p2Assets,
-    );
+    // _dummyAssets.value = DummyAssets(
+    //   sectionOneAssetList: p0Assets.map((e)=> e.path).toList(),
+    //   sectionTwoAssetList: [],
+    //   sectionThreeAssetList: [],
+    // );
     
 
     await _saveAssetsToLocalStorage(p1Assets);
@@ -118,13 +129,13 @@ class GetDummyAssetsUseCase {
     // Save the updated manifest to local storage
     await _repository.setLocalManifest(remoteManifest);
        // Update the observable with new data
-    dummyAssets.value = DummyAssets(
-      p0AssetList: p0Assets,
-      p1AssetList: p1Assets,
-      p2AssetList: p2Assets,
-    );
-    
-    return dummyAssets;
+    // _dummyAssets.value = DummyAssets(
+    //   sectionOneAssetList: p0Assets.map((e)=> e.path).toList(),
+    //   sectionTwoAssetList: p1Assets.map((e)=> e.path).toList(),
+    //   sectionThreeAssetList: p2Assets.map((e)=> e.path).toList(),
+    // );
+
+    _p1p2completer.complete(true);
   }
   
   /// Save new and updated assets to local storage

@@ -106,23 +106,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildModuleList(AssetModuleProvider provider) {
-    
     return Column(
       children: [
         ElevatedButton(
             onPressed: () {
-                // // Initialize bindings for proper dependency injection
-                // Get.put(provider.assetService);
-                // Get.lazyPut(() => AssetRepository(Get.find<AssetService>()));
-                
-                // Use ModuleAssetsBindings to properly inject dependencies
-                final bindings = ModuleAssetsBindings();
-                bindings.dependencies();
-                
-                // Now we can safely find the controller with all dependencies injected
-                final assetsController = Get.find<AssetsController>();
+              // // Initialize bindings for proper dependency injection
+              // Get.put(provider.assetService);
+              // Get.lazyPut(() => AssetRepository(Get.find<AssetService>()));
 
-                Get.to(() => NewScreen());
+              // Use ModuleAssetsBindings to properly inject dependencies
+              final bindings = ModuleAssetsBindings();
+              bindings.dependencies();
+
+              // Now we can safely find the controller with all dependencies injected
+              final assetsController = Get.find<AssetsController>();
+
+              Get.to(() => NewScreen());
             },
             child: const Text("demo")),
         Expanded(
@@ -166,7 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
 class DummyAssets {
   final List<String> p0AssetList;
   final List<String> p1AssetList;
@@ -192,18 +190,25 @@ class NewScreen extends StatelessWidget {
         title: const Text('Asset Demo'),
       ),
       body: Obx(() {
-        final dummyAssets = assetsController.dummyAssets.value;
         return Column(
           children: [
+            if (assetsController.state.p0Section?.assetList.isEmpty ?? true)
+              const Center(
+                child: Text('No assets available'),
+              ),
             SizedBox(
               height: 200,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 scrollDirection: Axis.horizontal,
-                itemCount: dummyAssets.p0AssetList.length,
+                itemCount: assetsController.state.p0Section!.assetList.length,
                 itemBuilder: (context, index) {
-                  final asset = dummyAssets.p0AssetList[index];
-                  return CommonImage(asset: asset, priority: 0);
+                  final asset =
+                      assetsController.state.p0Section!.assetList[index];
+                  return CommonWidget(
+                    asset: asset,
+                    title: assetsController.state.p0Section!.title,
+                  );
                 },
               ),
             ),
@@ -212,10 +217,14 @@ class NewScreen extends StatelessWidget {
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 scrollDirection: Axis.horizontal,
-                itemCount: dummyAssets.p1AssetList.length,
+                itemCount: assetsController.state.p1Section!.assetList.length,
                 itemBuilder: (context, index) {
-                  final asset = dummyAssets.p1AssetList[index];
-                  return CommonImage(asset: asset, priority: 1);
+                  final asset =
+                      assetsController.state.p1Section!.assetList[index];
+                  return CommonWidget(
+                    asset: asset,
+                    title: assetsController.state.p1Section!.title,
+                  );
                 },
               ),
             ),
@@ -224,10 +233,14 @@ class NewScreen extends StatelessWidget {
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 scrollDirection: Axis.horizontal,
-                itemCount: dummyAssets.p2AssetList.length,
+                itemCount: assetsController.state.p2Section!.assetList.length,
                 itemBuilder: (context, index) {
-                  final asset = dummyAssets.p2AssetList[index];
-                  return CommonImage(asset: asset, priority: 2);
+                  final asset =
+                      assetsController.state.p2Section!.assetList[index];
+                  return CommonWidget(
+                    asset: asset,
+                    title: assetsController.state.p2Section!.title,
+                  );
                 },
               ),
             ),
@@ -238,15 +251,15 @@ class NewScreen extends StatelessWidget {
   }
 }
 
-class CommonImage extends StatelessWidget {
-  const CommonImage({
+class CommonWidget extends StatelessWidget {
+  const CommonWidget({
     super.key,
     required this.asset,
-    required this.priority,
+    required this.title,
   });
 
   final String asset;
-  final int priority;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +271,7 @@ class CommonImage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Priority: $priority',
+              title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),

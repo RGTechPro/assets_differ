@@ -11,24 +11,28 @@ class ModuleAssetsBindings extends Bindings {
   @override
   void dependencies() {
     // Register the regular repository
-    Get.lazyPut<AssetRepository>(() => AssetRepository(
-      Get.find<AssetService>()
-    ));
-    
+    Get.lazyPut<AssetRepository>(
+        () => AssetRepository(Get.find<AssetService>()));
+
     // Register the dummy repository
     Get.lazyPut<DummyDataRepository>(() => DummyDataRepository());
-    
+
     // Register the DummyDataRepository as the implementation for BaseAssetRepository
     Get.lazyPut<BaseAssetRepository>(() => Get.find<DummyDataRepository>());
 
     // Register the use case with DummyDataRepository
-    Get.lazyPut<GetDummyAssetsUseCase>(() => GetDummyAssetsUseCase(
-      Get.find<BaseAssetRepository>()
-    ));
+    Get.lazyPut<GetDummyAssetsUseCase>(
+      () => GetDummyAssetsUseCase(
+        Get.find<BaseAssetRepository>(),
+        PlatformInfo(version: "1.0.0"),
+      ),
+    );
 
     // Register the controller with the use case injected
-    Get.lazyPut<AssetsController>(() => AssetsController(
-      getDummyAssetsUseCase: Get.find<GetDummyAssetsUseCase>(),
-    ));
+    Get.lazyPut<AssetsController>(
+      () => AssetsController(
+        getDummyAssetsUseCase: Get.find<GetDummyAssetsUseCase>(),
+      ),
+    );
   }
 }
