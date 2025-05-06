@@ -38,7 +38,8 @@ class AssetsController extends GetxController {
             title: 'P2 Assets',
             asset: kZeroPixel.obs,
           ),
-        ){    _initAssets();
+        ){    
+          // _initAssets();
 }
 
   StreamSubscription? _assetsSubscription;
@@ -56,7 +57,7 @@ class AssetsController extends GetxController {
 
   @override
   void onInit() {
-    // _initAssets();
+    _initAssets();
     super.onInit();
   }
 

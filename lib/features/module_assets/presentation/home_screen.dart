@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Now we can safely find the controller with all dependencies injected
                   final assetsController = Get.find<AssetsController>();
-
+                  assetsController.onInit();
                   Get.to(() => NewScreen());
                 },
                 child: const Text("Demo")),
@@ -336,7 +336,7 @@ class P0AssetsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Obx(() {
             final assetPath = assetsController.state.p0Section!.asset.value;
-            
+
             return FutureBuilder<String>(
               future: _loadAssetContent(assetPath),
               builder: (context, snapshot) {
@@ -348,20 +348,21 @@ class P0AssetsScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 50),
                         const SizedBox(height: 10),
                         Text('Error loading P0 asset: ${snapshot.error}'),
                       ],
                     ),
                   );
                 }
-                
+
                 final assetContent = snapshot.data ?? '';
                 return ImageCard(
                   asset: assetContent,
@@ -370,9 +371,9 @@ class P0AssetsScreen extends StatelessWidget {
               },
             );
           }),
-          
+
           const Divider(height: 32, thickness: 2),
-          
+
           // P1 Section - Important Assets
           const Text(
             'P1 Important Assets',
@@ -394,9 +395,9 @@ class P0AssetsScreen extends StatelessWidget {
                 ),
               );
             }
-            
+
             final assetPath = assetsController.state.p1Section!.asset.value;
-            
+
             return FutureBuilder<String>(
               future: _loadAssetContent(assetPath),
               builder: (context, snapshot) {
@@ -408,20 +409,21 @@ class P0AssetsScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 50),
                         const SizedBox(height: 10),
                         Text('Error loading P1 asset: ${snapshot.error}'),
                       ],
                     ),
                   );
                 }
-                
+
                 final assetContent = snapshot.data ?? '';
                 return ImageCard(
                   asset: assetContent,
@@ -430,9 +432,9 @@ class P0AssetsScreen extends StatelessWidget {
               },
             );
           }),
-          
+
           const Divider(height: 32, thickness: 2),
-          
+
           // P2 Section - Optional Assets
           const Text(
             'P2 Optional Assets',
@@ -454,9 +456,9 @@ class P0AssetsScreen extends StatelessWidget {
                 ),
               );
             }
-            
+
             final assetPath = assetsController.state.p2Section!.asset.value;
-            
+
             return FutureBuilder<String>(
               future: _loadAssetContent(assetPath),
               builder: (context, snapshot) {
@@ -468,20 +470,21 @@ class P0AssetsScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 50),
                         const SizedBox(height: 10),
                         Text('Error loading P2 asset: ${snapshot.error}'),
                       ],
                     ),
                   );
                 }
-                
+
                 final assetContent = snapshot.data ?? '';
                 return ImageCard(
                   asset: assetContent,
