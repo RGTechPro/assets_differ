@@ -185,42 +185,42 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: AssetConfig.modules.length,
-            itemBuilder: (context, index) {
-              final moduleName = AssetConfig.modules[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: ListTile(
-                  title: Text(
-                    moduleName.toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                      'Contains ${AssetConfig.demoAssets[moduleName]?.length ?? 0} assets'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final moduleManager =
-                        await provider.getModuleManager(moduleName);
-                    if (!mounted) return;
+        // Expanded(
+        //   child: ListView.builder(
+        //     padding: const EdgeInsets.all(16),
+        //     itemCount: AssetConfig.modules.length,
+        //     itemBuilder: (context, index) {
+        //       final moduleName = AssetConfig.modules[index];
+        //       return Card(
+        //         margin: const EdgeInsets.only(bottom: 16),
+        //         child: ListTile(
+        //           title: Text(
+        //             moduleName.toUpperCase(),
+        //             style: const TextStyle(fontWeight: FontWeight.bold),
+        //           ),
+        //           subtitle: Text(
+        //               'Contains ${AssetConfig.demoAssets[moduleName]?.length ?? 0} assets'),
+        //           trailing: const Icon(Icons.chevron_right),
+        //           onTap: () async {
+        //             final moduleManager =
+        //                 await provider.getModuleManager(moduleName);
+        //             if (!mounted) return;
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ModuleAssetsScreen(
-                          moduleName: moduleName,
-                          moduleManager: moduleManager,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        ),
+        //             Navigator.push(
+        //               context,
+        //               MaterialPageRoute(
+        //                 builder: (context) => ModuleAssetsScreen(
+        //                   moduleName: moduleName,
+        //                   moduleManager: moduleManager,
+        //                 ),
+        //               ),
+        //             );
+        //           },
+        //         ),
+        //       );
+        //     },
+        //   ),
+        // ),
       ],
     );
   }
