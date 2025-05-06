@@ -4,31 +4,41 @@ import 'package:assets_differ/features/module_assets/presentation/home_screen.da
 import 'package:get/get.dart';
 import '../../domain/usecases/get_dummy_assets_usecase.dart';
 
+const String kZeroPixel = 'assets/images/zero_pixel.png';
+
 class DummyAssets {
     final String logoImage;
     final String menuIcon;
     final String bannerImage;
     DummyAssets({required this.logoImage, required this.menuIcon, required this.bannerImage});
+
+    factory DummyAssets.fromAssetMap(Map<String, String> json) {
+      return DummyAssets(
+        logoImage: json['assets/logo.png'] ?? kZeroPixel,
+        menuIcon: json['assets/menu_icon.png'] ?? kZeroPixel,
+        bannerImage: json['assets/banner.png'] ?? kZeroPixel,
+      );
+    }
   }
 class AssetsController extends GetxController {
   final GetDummyAssetsUseCase _getDummyAssetsUseCase;
   late final AssetsControllerUIState state;
-  final DummyAssets _dummyAssets ;
+  final Rx<DummyAssets> _dummyAssets ;
   AssetsController({
     required GetDummyAssetsUseCase getDummyAssetsUseCase,
   })  : _getDummyAssetsUseCase = getDummyAssetsUseCase,
         state = AssetsControllerUIState(
           p0Section: AssetsSectionUIState(
             title: 'P0 Assets',
-            assetList: RxList<String>(),
+            asset: kZeroPixel.obs,
           ),
           p1Section: AssetsSectionUIState(
             title: 'P1 Assets',
-            assetList: RxList<String>(),
+            asset:kZeroPixel.obs,
           ),
           p2Section: AssetsSectionUIState(
             title: 'P2 Assets',
-            assetList: RxList<String>(),
+            asset: kZeroPixel.obs,
           ),
         );
 
@@ -37,9 +47,11 @@ class AssetsController extends GetxController {
   Future<void> _initAssets() async {
     // Fetch dummy assets and update the UI state
     _getDummyAssetsUseCase.execute();
-  _getDummyAssetsUseCase.isP0Completed.then((_) {
+  _assetsSubscription = _getDummyAssetsUseCase.dummyAssets.listen((data) {
       // Navigate to P0 assets screen once P0 is loaded
-      Get.off(() => P0AssetsScreen());
+      state.p0Section?.asset.value = data.logoImage;
+      state.p1Section?.asset.value = data.menuIcon;
+      state.p2Section?.asset.value = data.bannerImage;
     });
     // _getDummyAssetsUseCase.isP1P2Completed.then((_) {
     //   state.p0Section?.assetList.refresh();
@@ -79,10 +91,10 @@ class AssetsControllerUIState {
 
 class AssetsSectionUIState {
   final String title;
-  final RxList<String> assetList;
+  final RxString asset;
 
   AssetsSectionUIState({
     required this.title,
-    required this.assetList,
+    required this.asset,
   });
 }
