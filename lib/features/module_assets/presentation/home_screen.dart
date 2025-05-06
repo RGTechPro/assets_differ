@@ -299,7 +299,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-/// Main screen displaying P0 assets with navigation to P1 and P2 screens
+/// Main screen displaying all assets (P0, P1, and P2) in a single view
 class P0AssetsScreen extends StatelessWidget {
   P0AssetsScreen({Key? key}) : super(key: key);
 
@@ -323,91 +323,172 @@ class P0AssetsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('P0 Assets - Critical'),
+        title: const Text('Priority Assets Dashboard'),
       ),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
         children: [
-          // P0 Assets section
-          Expanded(
-            child: Obx(() {
-              final assetPath = assetsController.state.p0Section!.asset.value;
-
-              return FutureBuilder<String>(
-                future: _loadAssetContent(assetPath),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.red, size: 60),
-                          const SizedBox(height: 20),
-                          Text('Error loading asset: ${snapshot.error}'),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final assetContent = snapshot.data ?? '';
-                  return ImageCard(
-                    asset: assetContent,
-                    title: assetsController.state.p0Section!.title,
-                  );
-                },
-              );
-            }),
+          // P0 Section - Critical Assets
+          const Text(
+            'P0 Critical Assets',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-
-          // Navigation buttons
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.to(() => P1AssetsScreen());
-                  },
-                  child: const Text('View P1 Assets'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Get.to(() => P2AssetsScreen());
-                  },
-                  child: const Text('View P2 Assets'),
-                ),
-              ],
-            ),
-          ),
-
-          // Loading indicator for P1 and P2 assets
+          const SizedBox(height: 8),
           Obx(() {
-            // Show loading indicator for P1/P2 assets if they're not yet loaded
-            if ((assetsController.state.p1Section?.asset.isEmpty ?? true) ||
-                (assetsController.state.p2Section?.asset.isEmpty ?? true)) {
-              return const Padding(
-                padding: EdgeInsets.only(bottom: 16.0),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+            final assetPath = assetsController.state.p0Section!.asset.value;
+            
+            return FutureBuilder<String>(
+              future: _loadAssetContent(assetPath),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(),
                     ),
-                    SizedBox(height: 8),
-                    Text('Loading additional assets...'),
-                  ],
+                  );
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const SizedBox(height: 10),
+                        Text('Error loading P0 asset: ${snapshot.error}'),
+                      ],
+                    ),
+                  );
+                }
+                
+                final assetContent = snapshot.data ?? '';
+                return ImageCard(
+                  asset: assetContent,
+                  title: assetsController.state.p0Section!.title,
+                );
+              },
+            );
+          }),
+          
+          const Divider(height: 32, thickness: 2),
+          
+          // P1 Section - Important Assets
+          const Text(
+            'P1 Important Assets',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Obx(() {
+            if (assetsController.state.p1Section?.asset.isEmpty ?? true) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 10),
+                      Text('Loading P1 assets...'),
+                    ],
+                  ),
                 ),
               );
             }
-            return const SizedBox.shrink();
+            
+            final assetPath = assetsController.state.p1Section!.asset.value;
+            
+            return FutureBuilder<String>(
+              future: _loadAssetContent(assetPath),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const SizedBox(height: 10),
+                        Text('Error loading P1 asset: ${snapshot.error}'),
+                      ],
+                    ),
+                  );
+                }
+                
+                final assetContent = snapshot.data ?? '';
+                return ImageCard(
+                  asset: assetContent,
+                  title: assetsController.state.p1Section!.title,
+                );
+              },
+            );
+          }),
+          
+          const Divider(height: 32, thickness: 2),
+          
+          // P2 Section - Optional Assets
+          const Text(
+            'P2 Optional Assets',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Obx(() {
+            if (assetsController.state.p2Section?.asset.isEmpty ?? true) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 10),
+                      Text('Loading P2 assets...'),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            final assetPath = assetsController.state.p2Section!.asset.value;
+            
+            return FutureBuilder<String>(
+              future: _loadAssetContent(assetPath),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const SizedBox(height: 10),
+                        Text('Error loading P2 asset: ${snapshot.error}'),
+                      ],
+                    ),
+                  );
+                }
+                
+                final assetContent = snapshot.data ?? '';
+                return ImageCard(
+                  asset: assetContent,
+                  title: assetsController.state.p2Section!.title,
+                );
+              },
+            );
           }),
         ],
       ),

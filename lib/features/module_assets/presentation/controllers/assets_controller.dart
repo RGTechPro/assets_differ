@@ -15,7 +15,7 @@ class DummyAssets {
       return DummyAssets(
         logoImage: json['assets/logo.png'] ?? kZeroPixel,
         menuIcon: json['assets/menu_icon.png'] ?? kZeroPixel,
-        bannerImage: json['assets/banner.png'] ?? kZeroPixel,
+        bannerImage: json['assets/banner1.png'] ?? kZeroPixel,
       );
     }
   }

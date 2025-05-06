@@ -10,7 +10,7 @@ class DummyDataRepository implements BaseAssetRepository {
   @override
   Future<AssetManifest> getRemoteManifest(String version) async {
     // Simulate fetching data from a remote source
-    return Future.delayed(const Duration(seconds: 2), () {
+    return Future.delayed(const Duration(milliseconds: 1), () {
       switch (version) {
         case '1.0.0':
           return AssetManifest.fromJson(v1Json);
@@ -37,13 +37,13 @@ class DummyDataRepository implements BaseAssetRepository {
         "priority": 0
       },
       {
-        "path": "assets/menu/menu_icon.png",
+        "path": "assets/menu_icon.png",
         "hash": "def456ghi",
         "url": "https://picsum.photos/id/1025/100/100",
         "priority": 1
       },
       {
-        "path": "assets/banners/home/banner1.jpg",
+        "path": "assets/banner1.png",
         "hash": "ghi789jkl",
         "url": "https://picsum.photos/id/1038/600/300",
         "priority": 2
@@ -63,10 +63,10 @@ class DummyDataRepository implements BaseAssetRepository {
         "priority": 0
       },
       {
-        "path": "assets/icons/menu/menu_icon.png",
+        "path": "assets/menu_icon.png",
         "hash": "uvw654rst",
         "url": "https://picsum.photos/id/1062/100/100",
-        "priority": 2
+        "priority": 2 
       },
       {
         "path": "assets/dark_logo.png",
@@ -161,7 +161,7 @@ class DummyDataRepository implements BaseAssetRepository {
   Future<String> getAssetByPath(String path) async {
     try {
       final data = await FileStorageService.instance.getAssetByPath(path);
-      
+
       if (data.isNotEmpty) {
         return data;
       } else {
