@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:assets_differ/features/module_assets/presentation/home_screen.dart';
 import 'package:get/get.dart';
 import '../../domain/usecases/get_dummy_assets_usecase.dart';
@@ -39,33 +38,25 @@ class AssetsController extends GetxController {
             title: 'P2 Assets',
             asset: kZeroPixel.obs,
           ),
-        );
+        ){    _initAssets();
+}
 
   StreamSubscription? _assetsSubscription;
 
   Future<void> _initAssets() async {
     // Fetch dummy assets and update the UI state
-    _getDummyAssetsUseCase.execute();
+    _getDummyAssetsUseCase.execute().then((value) => Get.off(() => P0AssetsScreen()));
+    
   _assetsSubscription = _getDummyAssetsUseCase.dummyAssets.listen((data) {
-      // Navigate to P0 assets screen once P0 is loaded
       state.p0Section?.asset.value = data.logoImage;
       state.p1Section?.asset.value = data.menuIcon;
       state.p2Section?.asset.value = data.bannerImage;
     });
-    // _getDummyAssetsUseCase.isP1P2Completed.then((_) {
-    //   state.p0Section?.assetList.refresh();
-    //   state.p1Section?.assetList.refresh();
-    //   state.p2Section?.assetList.refresh();
-    // });
-
-    // state.p0Section?.assetList.value = _dummyAssets.sectionOneAssetList;
-    // state.p1Section?.assetList.value = _dummyAssets.sectionTwoAssetList;
-    // state.p2Section?.assetList.value = _dummyAssets.sectionThreeAssetList;
   }
 
   @override
   void onInit() {
-    _initAssets();
+    // _initAssets();
     super.onInit();
   }
 

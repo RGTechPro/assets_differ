@@ -14,7 +14,7 @@ class StorageImplementationIO implements StorageInterface {
   /// Get the assets folder path
   Future<String> get _assetsPath async {
     final localPath = await _localPath;
-    final assetsDir = Directory(path.join(localPath, 'assets'));
+    final assetsDir = Directory(path.join(localPath));
     
     // Create assets directory if it doesn't exist
     if (!await assetsDir.exists()) {

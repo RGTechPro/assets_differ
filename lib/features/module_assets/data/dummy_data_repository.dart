@@ -161,6 +161,7 @@ class DummyDataRepository implements BaseAssetRepository {
   Future<String> getAssetByPath(String path) async {
     try {
       final data = await FileStorageService.instance.getAssetByPath(path);
+      
       if (data.isNotEmpty) {
         return data;
       } else {
@@ -181,6 +182,30 @@ class DummyDataRepository implements BaseAssetRepository {
       print('Data size: ${data.length} bytes');
     } catch (e) {
       print('Error saving asset: $e');
+    }
+  }
+
+  /// Clear all local assets and the local manifest
+  Future<void> clearAllLocalAssets() async {
+    try {
+      // Step 1: Get the local manifest first to know which assets to delete
+      final manifest = await getLocalManifest();
+      
+      // Step 2: Delete all the assets if we have a manifest
+      if (manifest != null) {
+        for (var asset in manifest.assets) {
+          await deleteAssetByPath(asset.path);
+          print('Deleted asset: ${asset.path}');
+        }
+      }
+      
+      // Step 3: Clear the manifest from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_manifestKey);
+      
+      print('All local assets and manifest cleared successfully');
+    } catch (e) {
+      print('Error clearing local assets: $e');
     }
   }
 }

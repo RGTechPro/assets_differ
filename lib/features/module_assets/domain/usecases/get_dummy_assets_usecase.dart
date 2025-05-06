@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../module_assets/presentation/controllers/assets_controller.dart';
 import '../../data/repository/repository_interface.dart';
 
@@ -150,8 +151,9 @@ class GetDummyAssetsUseCase {
   }
 
   Future<String> _baseLocalAssetPath() async {
-    // TODO: [@rishabh] have a look on this
-    return "/0/localpath";
+    
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path + '/';   
   }
 
   /// Save new and updated assets to local storage

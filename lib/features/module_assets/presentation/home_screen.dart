@@ -2,6 +2,8 @@ import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/managers/asset_module_provider.dart';
 import 'package:assets_differ/core/services/asset_service.dart';
 import 'package:assets_differ/features/module_assets/data/asset_repository.dart';
+import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
+import 'package:assets_differ/features/module_assets/data/repository/repository_interface.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:flutter/material.dart';
@@ -110,22 +112,79 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildModuleList(AssetModuleProvider provider) {
     return Column(
       children: [
-        ElevatedButton(
-            onPressed: () {
-              // // Initialize bindings for proper dependency injection
-              // Get.put(provider.assetService);
-              // Get.lazyPut(() => AssetRepository(Get.find<AssetService>()));
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+                onPressed: () {
+                  // Initialize bindings for proper dependency injection
+                  final bindings = ModuleAssetsBindings();
+                  bindings.dependencies();
 
-              // Use ModuleAssetsBindings to properly inject dependencies
-              final bindings = ModuleAssetsBindings();
-              bindings.dependencies();
+                  // Now we can safely find the controller with all dependencies injected
+                  final assetsController = Get.find<AssetsController>();
 
-              // Now we can safely find the controller with all dependencies injected
-              final assetsController = Get.find<AssetsController>();
+                  Get.to(() => NewScreen());
+                },
+                child: const Text("Demo")),
+            ElevatedButton(
+              onPressed: () async {
+                // Show confirmation dialog
+                final bool? confirmDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Clear All Assets'),
+                    content: const Text(
+                        'This will delete all downloaded assets and reset the app. Are you sure?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
 
-              Get.to(() => NewScreen());
-            },
-            child: const Text("demo")),
+                // If user confirmed, clear all assets
+                if (confirmDelete == true) {
+                  // Show loading indicator
+                  final scaffold = ScaffoldMessenger.of(context);
+
+                  // Initialize bindings for dependency injection
+                  final bindings = ModuleAssetsBindings();
+                  bindings.dependencies();
+
+                  // Get the repository
+                  final repository = Get.find<DummyDataRepository>();
+
+                  // Clear all assets
+                  await repository.clearAllLocalAssets();
+
+                  // Show success message
+                  scaffold.showSnackBar(
+                    const SnackBar(
+                      content: Text('All assets cleared successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+
+                  // Rebuild the screen
+                  setState(() {
+                    _initializeAssetProvider();
+                  });
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: const Text("Clear All Assets"),
+            ),
+          ],
+        ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -195,7 +254,7 @@ class _SplashScreenState extends State<SplashScreen> {
     assetsController = Get.find<AssetsController>();
 
     super.initState();
-    assetsController.onInit();
+    // assetsController.onInit();
   }
 
   // Future<void> _initAssetsAndNavigate() async {
@@ -246,6 +305,19 @@ class P0AssetsScreen extends StatelessWidget {
 
   // Get the controller
   final AssetsController assetsController = Get.find<AssetsController>();
+  // Get the repository for loading assets
+  final BaseAssetRepository repository = Get.find<BaseAssetRepository>();
+
+  Future<String> _loadAssetContent(String assetPath) async {
+    try {
+      // Get the asset content using the repository
+      final data = await repository.getAssetByPath(assetPath);
+      return data;
+    } catch (e) {
+      print('Error loading asset: $e');
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -258,19 +330,34 @@ class P0AssetsScreen extends StatelessWidget {
           // P0 Assets section
           Expanded(
             child: Obx(() {
-              // if (assetsController.state.p0Section?.assetList.isEmpty ?? true) {
-              //   return const Center(
-              //     child: Text('No P0 assets available'),
-              //   );
-              // }
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: 1,
-                itemBuilder: (context, index) {
-                  final asset = assetsController.state.p0Section!.asset
-                      .value; // Updated to use the asset value
+              final assetPath = assetsController.state.p0Section!.asset.value;
+
+              return FutureBuilder<String>(
+                future: _loadAssetContent(assetPath),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 60),
+                          const SizedBox(height: 20),
+                          Text('Error loading asset: ${snapshot.error}'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final assetContent = snapshot.data ?? '';
                   return ImageCard(
-                    asset: asset,
+                    asset: assetContent,
                     title: assetsController.state.p0Section!.title,
                   );
                 },
@@ -334,6 +421,19 @@ class P1AssetsScreen extends StatelessWidget {
 
   // Get the controller
   final AssetsController assetsController = Get.find<AssetsController>();
+  // Get the repository for loading assets
+  final BaseAssetRepository repository = Get.find<BaseAssetRepository>();
+
+  Future<String> _loadAssetContent(String assetPath) async {
+    try {
+      // Get the asset content using the repository
+      final data = await repository.getAssetByPath(assetPath);
+      return data;
+    } catch (e) {
+      print('Error loading asset: $e');
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -356,9 +456,37 @@ class P1AssetsScreen extends StatelessWidget {
             );
           }
 
-          return ImageCard(
-            asset: assetsController.state.p1Section!.asset.value,
-            title: assetsController.state.p1Section!.title,
+          final assetPath = assetsController.state.p1Section!.asset.value;
+
+          return FutureBuilder<String>(
+            future: _loadAssetContent(assetPath),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: Colors.red, size: 60),
+                      const SizedBox(height: 20),
+                      Text('Error loading asset: ${snapshot.error}'),
+                    ],
+                  ),
+                );
+              }
+
+              final assetContent = snapshot.data ?? '';
+              return ImageCard(
+                asset: assetContent,
+                title: assetsController.state.p1Section!.title,
+              );
+            },
           );
         },
       ),
@@ -372,6 +500,19 @@ class P2AssetsScreen extends StatelessWidget {
 
   // Get the controller
   final AssetsController assetsController = Get.find<AssetsController>();
+  // Get the repository for loading assets
+  final BaseAssetRepository repository = Get.find<BaseAssetRepository>();
+
+  Future<String> _loadAssetContent(String assetPath) async {
+    try {
+      // Get the asset content using the repository
+      final data = await repository.getAssetByPath(assetPath);
+      return data;
+    } catch (e) {
+      print('Error loading asset: $e');
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -393,9 +534,37 @@ class P2AssetsScreen extends StatelessWidget {
           );
         }
 
-        return ImageCard(
-          asset: assetsController.state.p2Section!.asset.value,
-          title: assetsController.state.p2Section!.title,
+        final assetPath = assetsController.state.p2Section!.asset.value;
+
+        return FutureBuilder<String>(
+          future: _loadAssetContent(assetPath),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 60),
+                    const SizedBox(height: 20),
+                    Text('Error loading asset: ${snapshot.error}'),
+                  ],
+                ),
+              );
+            }
+
+            final assetContent = snapshot.data ?? '';
+            return ImageCard(
+              asset: assetContent,
+              title: assetsController.state.p2Section!.title,
+            );
+          },
         );
       }),
     );
@@ -437,60 +606,24 @@ class ImageCard extends StatelessWidget {
   }
 
   Widget _buildImage(String source) {
-    // Check if the source is a file path (starts with / on macOS/Linux or contains :\ for Windows)
-    if (source.startsWith('/') || source.contains(':\\')) {
-      // Load from file
-      return Image.file(
-        File(source),
-        height: 150,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.broken_image, size: 150);
-        },
-      );
-    }
-    // Check if the source is base64 encoded
-    else if (source.startsWith('data:image') ||
-        RegExp(r'^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$')
-            .hasMatch(source)) {
-      try {
-        // Extract base64 data if it's a data URI
-        String base64String = source;
-        if (source.contains(',')) {
-          base64String = source.split(',')[1];
-        }
-
-        // Decode base64 to bytes
-        final bytes = base64Decode(base64String);
-        return Image.memory(
-          bytes,
-          height: 150,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.broken_image, size: 150);
-          },
-        );
-      } catch (e) {
-        return const Icon(Icons.broken_image, size: 150);
+    try {
+      // Extract base64 data if it's a data URI
+      String base64String = source;
+      if (source.contains(',')) {
+        base64String = source.split(',')[1];
       }
-    } else {
-      // Treat as network URL
-      return Image.network(
-        source,
+
+      // Decode base64 to bytes
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
         height: 150,
         errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.broken_image, size: 150);
         },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
-        },
       );
+    } catch (e) {
+      return const Icon(Icons.broken_image, size: 150);
     }
   }
 }
