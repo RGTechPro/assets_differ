@@ -34,13 +34,13 @@ class GetDummyAssetsUseCase {
 
   
   /// Execute the use case to get DummyAssets as an Observable
-  Future<void> execute() async {
+  Future<DummyAssets> execute() async {
     // First, load local manifest to get the current version
     final AssetManifest? localManifest = await _repository.getLocalManifest();
     
     
     // Use the repository to fetch remote data using the current version
-    final AssetManifest remoteManifest = await _repository.getRemoteManifest(_platformInfo.version);
+    final AssetManifest remoteManifest = await _repository.getRemoteManifest("1.0.0");
     
     // Extract assets by priority
     List<AssetItem> p0Assets = [];

@@ -31,21 +31,21 @@ class DummyDataRepository implements BaseAssetRepository {
     "module": "lobby",
     "assets": [
       {
-        "path": "images/logo.png",
-        "hash": "h1v1",
-        "url": "https://cdn.example.com/assets/v1.0.0/images/logo.png",
+        "path": "assets/logo.png",
+        "hash": "abc123def",
+        "url": "https://picsum.photos/id/1011/300/200",
         "priority": 0
       },
       {
-        "path": "icons/menu/menu_icon.png",
-        "hash": "h2v1",
-        "url": "https://cdn.example.com/assets/v1.0.0/icons/menu/menu_icon.png",
+        "path": "assets/menu/menu_icon.png",
+        "hash": "def456ghi",
+        "url": "https://picsum.photos/id/1025/100/100",
         "priority": 1
       },
       {
-        "path": "banners/home/banner1.jpg",
-        "hash": "h3v1",
-        "url": "https://cdn.example.com/assets/v1.0.0/banners/home/banner1.jpg",
+        "path": "assets/banners/home/banner1.jpg",
+        "hash": "ghi789jkl",
+        "url": "https://picsum.photos/id/1038/600/300",
         "priority": 2
       }
     ]
@@ -57,22 +57,22 @@ class DummyDataRepository implements BaseAssetRepository {
     "module": "lobby",
     "assets": [
       {
-        "path": "images/logo.png",
-        "hash": "h1v2",
-        "url": "https://cdn.example.com/assets/v2.0.0/images/logo.png",
+        "path": "assets/images/logo.png",
+        "hash": "xyz321uvw",
+        "url": "https://picsum.photos/id/1050/300/200",
         "priority": 0
       },
       {
-        "path": "icons/menu/menu_icon.png",
-        "hash": "h2v2", 
-        "url": "https://cdn.example.com/assets/v2.0.0/icons/menu/menu_icon.png",
-        "priority": 1
+        "path": "assets/icons/menu/menu_icon.png",
+        "hash": "uvw654rst",
+        "url": "https://picsum.photos/id/1062/100/100",
+        "priority": 2
       },
       {
-        "path": "banners/home/banner1.jpg",
-        "hash": "h3v2",
-        "url": "https://cdn.example.com/assets/v2.0.0/banners/home/banner1.jpg",
-        "priority": 2
+        "path": "assets/dark_logo.png",
+        "hash": "mno999pqr",
+        "url": "https://picsum.photos/id/1071/300/200",
+        "priority": 1
       }
     ]
   };
@@ -102,19 +102,19 @@ class DummyDataRepository implements BaseAssetRepository {
       }
     ]
   };
-  
+
   // Key for storing manifest in SharedPreferences
   static const String _manifestKey = 'local_asset_manifest';
-  
+
   @override
   Future<AssetManifest?> getLocalManifest() async {
     try {
       // Get instance of SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Retrieve stored manifest JSON string
       final String? manifestJson = prefs.getString(_manifestKey);
-      
+
       if (manifestJson != null && manifestJson.isNotEmpty) {
         // Parse the JSON string to AssetManifest
         return AssetManifest.fromJsonString(manifestJson);
@@ -122,27 +122,27 @@ class DummyDataRepository implements BaseAssetRepository {
     } catch (e) {
       print('Error retrieving manifest from SharedPreferences: $e');
     }
-    
+
     // Return null if no stored manifest is found or an error occurs
     return null;
   }
-  
+
   @override
   Future<void> setLocalManifest(AssetManifest manifest) async {
     try {
       // Convert manifest to JSON string
       final String manifestJson = manifest.toJsonString();
-      
+
       // Store in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_manifestKey, manifestJson);
-      
+
       print('Local manifest updated in SharedPreferences');
     } catch (e) {
       print('Error saving manifest to SharedPreferences: $e');
     }
   }
-  
+
   @override
   Future<void> deleteAssetByPath(String path) async {
     try {
@@ -156,7 +156,7 @@ class DummyDataRepository implements BaseAssetRepository {
       print('Error deleting asset: $e');
     }
   }
-  
+
   @override
   Future<String> getAssetByPath(String path) async {
     try {
@@ -172,7 +172,7 @@ class DummyDataRepository implements BaseAssetRepository {
       return '';
     }
   }
-  
+
   @override
   Future<void> saveAssetByPath(String path, String data) async {
     try {

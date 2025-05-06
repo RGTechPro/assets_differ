@@ -1,29 +1,19 @@
 import 'dart:async';
 
+import 'package:assets_differ/features/module_assets/presentation/home_screen.dart';
 import 'package:get/get.dart';
 import '../../domain/usecases/get_dummy_assets_usecase.dart';
 
 class DummyAssets {
-  final List<String> sectionOneAssetList;
-  final List<String> sectionTwoAssetList;
-  final List<String> sectionThreeAssetList;
-
-  DummyAssets({
-    required this.sectionOneAssetList,
-    required this.sectionTwoAssetList,
-    required this.sectionThreeAssetList,
-  });
-}
-
+    final String logoImage;
+    final String menuIcon;
+    final String bannerImage;
+    DummyAssets({required this.logoImage, required this.menuIcon, required this.bannerImage});
+  }
 class AssetsController extends GetxController {
   final GetDummyAssetsUseCase _getDummyAssetsUseCase;
   late final AssetsControllerUIState state;
-  final DummyAssets _dummyAssets = DummyAssets(
-    sectionOneAssetList: [],
-    sectionTwoAssetList: [],
-    sectionThreeAssetList: [],
-  );
-
+  final DummyAssets _dummyAssets ;
   AssetsController({
     required GetDummyAssetsUseCase getDummyAssetsUseCase,
   })  : _getDummyAssetsUseCase = getDummyAssetsUseCase,
@@ -47,16 +37,19 @@ class AssetsController extends GetxController {
   Future<void> _initAssets() async {
     // Fetch dummy assets and update the UI state
     _getDummyAssetsUseCase.execute();
-
-    _getDummyAssetsUseCase.isP1P2Completed.then((_) {
-      state.p0Section?.assetList.refresh();
-      state.p1Section?.assetList.refresh();
-      state.p2Section?.assetList.refresh();
+  _getDummyAssetsUseCase.isP0Completed.then((_) {
+      // Navigate to P0 assets screen once P0 is loaded
+      Get.off(() => P0AssetsScreen());
     });
+    // _getDummyAssetsUseCase.isP1P2Completed.then((_) {
+    //   state.p0Section?.assetList.refresh();
+    //   state.p1Section?.assetList.refresh();
+    //   state.p2Section?.assetList.refresh();
+    // });
 
-    state.p0Section?.assetList.value = _dummyAssets.sectionOneAssetList;
-    state.p1Section?.assetList.value = _dummyAssets.sectionTwoAssetList;
-    state.p2Section?.assetList.value = _dummyAssets.sectionThreeAssetList;
+    // state.p0Section?.assetList.value = _dummyAssets.sectionOneAssetList;
+    // state.p1Section?.assetList.value = _dummyAssets.sectionTwoAssetList;
+    // state.p2Section?.assetList.value = _dummyAssets.sectionThreeAssetList;
   }
 
   @override
