@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/data/sources/local_asset_data_source.dart';
 import 'package:assets_differ/features/module_assets/data/sources/remote_asset_data_source.dart';
-import 'repository/repository_interface.dart';
+import '../domain/repository/repository_interface.dart';
 
 /// Repository for serving static dummy data for testing
 /// This class delegates operations to the appropriate data source

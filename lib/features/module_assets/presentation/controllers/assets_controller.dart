@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/home_screen.dart';
 import 'package:get/get.dart';
 import '../../domain/usecases/get_dummy_assets_usecase.dart';
@@ -6,25 +7,31 @@ import '../../domain/usecases/get_dummy_assets_usecase.dart';
 const String kZeroPixel = 'assets/images/zero_pixel.png';
 
 class DummyAssets {
-    final String logoImage;
-    final String menuIcon;
-    final String bannerImage;
-    DummyAssets({required this.logoImage, required this.menuIcon, required this.bannerImage});
+  final String logoImage;
+  final String menuIcon;
+  final String bannerImage;
+  DummyAssets({
+    required this.logoImage,
+    required this.menuIcon,
+    required this.bannerImage,
+  });
 
-    factory DummyAssets.fromAssetMap(Map<String, String> json) {
-      return DummyAssets(
-        logoImage: json['assets/logo.png'] ?? kZeroPixel,
-        menuIcon: json['assets/menu_icon.png'] ?? kZeroPixel,
-        bannerImage: json['assets/banner1.png'] ?? kZeroPixel,
-      );
-    }
+  factory DummyAssets.fromAssetMap(Map<String, String> json) {
+    return DummyAssets(
+      logoImage: json['assets/logo.png'] ?? kZeroPixel,
+      menuIcon: json['assets/menu_icon.png'] ?? kZeroPixel,
+      bannerImage: json['assets/banner1.png'] ?? kZeroPixel,
+    );
   }
+}
+
 class AssetsController extends GetxController {
   final GetDummyAssetsUseCase _getDummyAssetsUseCase;
   late final AssetsControllerUIState state;
   AssetsController({
-    required GetDummyAssetsUseCase getDummyAssetsUseCase,
-  })  : _getDummyAssetsUseCase = getDummyAssetsUseCase,
+    required ModuleAssetsDependencyProvider dependencyProvider,
+  })  : _getDummyAssetsUseCase =
+            dependencyProvider.provideGetDummyAssetsUseCase(),
         state = AssetsControllerUIState(
           p0Section: AssetsSectionUIState(
             title: 'P0 Assets',
@@ -32,23 +39,19 @@ class AssetsController extends GetxController {
           ),
           p1Section: AssetsSectionUIState(
             title: 'P1 Assets',
-            asset:kZeroPixel.obs,
+            asset: kZeroPixel.obs,
           ),
           p2Section: AssetsSectionUIState(
             title: 'P2 Assets',
             asset: kZeroPixel.obs,
           ),
-        ){    
-          // _initAssets();
-}
+        );
 
   StreamSubscription? _assetsSubscription;
 
   Future<void> _initAssets() async {
-    // Fetch dummy assets and update the UI state
-    _getDummyAssetsUseCase.execute().then((value) => Get.off(() => P0AssetsScreen()));
-    
-  _assetsSubscription = _getDummyAssetsUseCase.dummyAssets.listen((data) {
+    _assetsSubscription =
+        _getDummyAssetsUseCase.dummyAssets.listenAndPump((data) {
       state.p0Section?.asset.value = data.logoImage;
       state.p1Section?.asset.value = data.menuIcon;
       state.p2Section?.asset.value = data.bannerImage;

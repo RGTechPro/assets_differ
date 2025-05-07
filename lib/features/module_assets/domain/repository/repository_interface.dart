@@ -1,4 +1,4 @@
-import '../models/asset_manifest.dart';
+import '../../data/models/asset_manifest.dart';
 
 /// Interface defining the contract for asset repositories
 abstract class BaseAssetRepository {

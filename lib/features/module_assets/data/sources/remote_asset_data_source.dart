@@ -5,7 +5,7 @@ import 'package:assets_differ/features/module_assets/data/models/asset_manifest.
 /// Handles all remote data operations for assets
 class RemoteAssetDataSource {
   // JSON data for version 1.0.0
-  final Map<String, dynamic> v1Json = {
+  final Map<String, dynamic> _v1Json = {
     "version": "1.0.0",
     "module": "lobby",
     "assets": [
@@ -31,7 +31,7 @@ class RemoteAssetDataSource {
   };
 
   // JSON data for version 2.0.0
-  final Map<String, dynamic> v2Json = {
+  final Map<String, dynamic> _v2Json = {
     "version": "2.0.0",
     "module": "lobby",
     "assets": [
@@ -57,7 +57,7 @@ class RemoteAssetDataSource {
   };
 
   // JSON data for version 3.0.0
-  final Map<String, dynamic> v3Json = {
+  final Map<String, dynamic> _v3Json = {
     "version": "3.0.0",
     "module": "lobby",
     "assets": [
@@ -89,14 +89,14 @@ class RemoteAssetDataSource {
     return Future.delayed(const Duration(milliseconds: 1), () {
       switch (version) {
         case '1.0.0':
-          return AssetManifest.fromJson(v1Json);
+          return AssetManifest.fromJson(_v1Json);
         case '2.0.0':
-          return AssetManifest.fromJson(v2Json);
+          return AssetManifest.fromJson(_v2Json);
         case '3.0.0':
-          return AssetManifest.fromJson(v3Json);
+          return AssetManifest.fromJson(_v3Json);
         default:
           // Default to latest version if not found
-          return AssetManifest.fromJson(v3Json);
+          return AssetManifest.fromJson(_v3Json);
       }
     });
   }
