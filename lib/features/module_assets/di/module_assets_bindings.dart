@@ -19,24 +19,28 @@ class ModuleAssetsDependencyProvider {
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
 
   // Platform info
-  final PlatformInfo _platformInfo;
+  PlatformInfo _platformInfo;
 
   // Constructor with platform info
   ModuleAssetsDependencyProvider({
     required PlatformInfo platformInfo,
   }) : _platformInfo = platformInfo;
+  
+  /// Update platform info when version changes
+  void updatePlatformInfo(PlatformInfo newPlatformInfo) {
+    if (_platformInfo.version != newPlatformInfo.version) {
+      _platformInfo = newPlatformInfo;
+    }
+  }
+  
+  /// Get the current platform info
+  PlatformInfo get platformInfo => _platformInfo;
 
   // Provide dummy data repository
   DummyDataRepository provideDummyDataRepository() {
     _dummyDataRepository ??= DummyDataRepository();
     return _dummyDataRepository!;
   }
-
-  // // Provide base asset repository
-  // BaseAssetRepository provideBaseAssetRepository() {
-  //   _baseAssetRepository ??= provideDummyDataRepository();
-  //   return _baseAssetRepository!;
-  // }
 
   // Provide manifest compare use case
   ManifestCompareUseCase provideManifestCompareUseCase() {
@@ -65,7 +69,7 @@ class ModuleAssetsDependencyProvider {
   // Provide get dummy assets use case
   GetDummyAssetsUseCase provideGetDummyAssetsUseCase() {
     _getDummyAssetsUseCase ??= GetDummyAssetsUseCase(
-          repository: provideDummyDataRepository(),
+      repository: provideDummyDataRepository(),
       platformInfo: _platformInfo,
       manifestCompareUseCase: provideManifestCompareUseCase(),
       assetDownloadUseCase: provideAssetDownloadUseCase(),
@@ -78,7 +82,6 @@ class ModuleAssetsDependencyProvider {
   // Dispose all dependencies
   void disposeDependencies() {
     _dummyDataRepository = null;
-    // _baseAssetRepository = null;
     _manifestCompareUseCase = null;
     _assetDownloadUseCase = null;
     _assetCleanupUseCase = null;

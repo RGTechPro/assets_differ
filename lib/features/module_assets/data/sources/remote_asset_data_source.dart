@@ -17,8 +17,8 @@ class RemoteAssetDataSource {
       },
       {
         "path": "assets/menu_icon.png",
-        "hash": "def456ghi",
-        "url": "https://picsum.photos/id/1025/100/100",
+        "hash": "def456gh9",
+        "url": "https://picsum.photos/id/1020/100/100",
         "priority": 1
       },
       {
@@ -32,51 +32,51 @@ class RemoteAssetDataSource {
 
   // JSON data for version 2.0.0
   final Map<String, dynamic> _v2Json = {
-    "version": "2.0.0",
+    "version": "1.1.0",
     "module": "lobby",
     "assets": [
       {
-        "path": "assets/images/logo.png",
-        "hash": "xyz321uvw",
-        "url": "https://picsum.photos/id/1050/300/200",
+        "path": "assets/logo.png",
+        "hash": "abc123def",
+        "url": "https://picsum.photos/id/1011/300/200",
         "priority": 0
       },
       {
         "path": "assets/menu_icon.png",
-        "hash": "uvw654rst",
-        "url": "https://picsum.photos/id/1062/100/100",
-        "priority": 2 
+        "hash": "def456gh9",
+        "url": "https://picsum.photos/id/1020/100/100",
+        "priority": 1
       },
       {
-        "path": "assets/dark_logo.png",
-        "hash": "mno999pqr",
-        "url": "https://picsum.photos/id/1071/300/200",
-        "priority": 1
+        "path": "assets/banner1.png",
+        "hash": "ghi789jkl",
+        "url": "https://picsum.photos/id/1038/600/300",
+        "priority": 2
       }
     ]
   };
 
   // JSON data for version 3.0.0
   final Map<String, dynamic> _v3Json = {
-    "version": "3.0.0",
+    "version": "1.2.0",
     "module": "lobby",
     "assets": [
       {
-        "path": "images/logo.png",
-        "hash": "h1v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/images/logo.png",
+        "path": "assets/logo.png",
+        "hash": "abc1235ef",
+        "url": "https://picsum.photos/id/1012/300/200",
         "priority": 0
       },
       {
-        "path": "icons/menu/menu_icon.png",
-        "hash": "h2v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/icons/menu/menu_icon.png",
+        "path": "assets/menu_icon.png",
+        "hash": "def456ghi",
+        "url": "https://picsum.photos/id/1025/100/100",
         "priority": 1
       },
       {
-        "path": "banners/home/banner1.jpg",
-        "hash": "h3v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/banners/home/banner1.jpg",
+        "path": "assets/banner1.png",
+        "hash": "ghi789jkl",
+        "url": "https://picsum.photos/id/1038/600/300",
         "priority": 2
       }
     ]
@@ -90,9 +90,9 @@ class RemoteAssetDataSource {
       switch (version) {
         case '1.0.0':
           return AssetManifest.fromJson(_v1Json);
-        case '2.0.0':
+        case '1.1.0':
           return AssetManifest.fromJson(_v2Json);
-        case '3.0.0':
+        case '1.2.0':
           return AssetManifest.fromJson(_v3Json);
         default:
           // Default to latest version if not found

@@ -1,126 +1,107 @@
 import 'package:assets_differ/core/config/asset_config.dart';
-import 'package:assets_differ/core/managers/asset_module_provider.dart';
-import 'package:assets_differ/core/services/asset_service.dart';
 import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/get_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
+import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 
+/// Controller for the home screen
+class HomeScreenController extends GetxController {
+  final Rx<String> currentVersion = AssetConfig.appVersion.obs;
+
+  void onVersionChanged(String newVersion) {
+    currentVersion.value = newVersion;
+  }
+
+  Future<void> clearAllAssets() async {
+    try {
+      // Create a temporary dependency provider just to clear assets
+      final tempProvider = ModuleAssetsDependencyProvider(
+        platformInfo: PlatformInfo(version: currentVersion.value),
+      );
+
+      await tempProvider.provideDummyDataRepository().clearAllLocalAssets();
+
+      Get.snackbar(
+        'Success',
+        'All assets cleared successfully',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to clear assets: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+}
+
 /// Home screen that lists available modules
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends GetView<HomeScreenController> {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  late Future<AssetModuleProvider> _providerFuture;
-
-  final ModuleAssetsDependencyProvider dependencyProvider =
-      ModuleAssetsDependencyProvider(
-    platformInfo: PlatformInfo(
-      version: AssetConfig.appVersion,
-    ),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAssetProvider();
-  }
-
-  Future<void> _initializeAssetProvider() async {
-    _providerFuture = AssetService.getInstance(
-      baseApiUrl: AssetConfig.baseApiUrl,
-      appVersion: AssetConfig.appVersion,
-      brandId: AssetConfig.defaultBrandId,
-    ).then((assetService) {
-      return AssetModuleProvider(assetService: assetService);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Make sure the controller is initialized
+    Get.put(HomeScreenController());
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Asset Differ Demo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _initializeAssetProvider();
-              });
-            },
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: VersionSelector(onVersionChanged: controller.onVersionChanged),
+          ),
+          Expanded(
+            child: _buildModuleList(context),
           ),
         ],
-      ),
-      body: FutureBuilder<AssetModuleProvider>(
-        future: _providerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 60,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Error initializing asset service',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      '${snapshot.error}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _initializeAssetProvider();
-                      });
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final provider = snapshot.data!;
-          return _buildModuleList(provider);
-        },
       ),
     );
   }
 
-  Widget _buildModuleList(AssetModuleProvider provider) {
+  Widget _buildModuleList(BuildContext context) {
     return Column(
       children: [
+        // Display version info
+        Container(
+          padding: const EdgeInsets.all(12.0),
+          margin: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8.0),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
+          child: Obx(() => Text(
+                'Selected App Version: ${controller.currentVersion.value}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              )),
+        ),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
                 onPressed: () {
+                  // Create dependency provider with current selected version when navigating
+                  final dependencyProvider = ModuleAssetsDependencyProvider(
+                    platformInfo: PlatformInfo(version: controller.currentVersion.value),
+                  );
+
                   Get.to(
                     () => SplashScreen(
                       dependencyProvider: dependencyProvider,
@@ -152,33 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // If user confirmed, clear all assets
                 if (confirmDelete == true) {
-                  // Show loading indicator
-                  final scaffold = ScaffoldMessenger.of(context);
-
-                  // Initialize bindings for dependency injection
-
-                  // dependencyProvider.dependencies();
-
-                  // Get the repository
-                  // final repository = Get.find<DummyDataRepository>();
-
-                  dependencyProvider.provideDummyDataRepository().clearAllLocalAssets();
-
-                  // Clear all assets
-                  // await repository.clearAllLocalAssets();
-
-                  // Show success message
-                  scaffold.showSnackBar(
-                    const SnackBar(
-                      content: Text('All assets cleared successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-
-                  // Rebuild the screen
-                  setState(() {
-                    _initializeAssetProvider();
-                  });
+                  controller.clearAllAssets();
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -191,18 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-}
-
-class DummyAssets {
-  final List<String> p0AssetList;
-  final List<String> p1AssetList;
-  final List<String> p2AssetList;
-
-  DummyAssets({
-    required this.p0AssetList,
-    required this.p1AssetList,
-    required this.p2AssetList,
-  });
 }
 
 /// Splash screen that starts loading assets and navigates to main screen when P0 assets are loaded
@@ -481,166 +424,6 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
     );
   }
 }
-
-// /// Screen displaying P1 assets
-// class P1AssetsScreen extends StatelessWidget {
-//   final AssetsController assetsController;
-//   final BaseAssetRepository repository;
-
-//   const P1AssetsScreen({
-//     Key? key,
-//     required this.assetsController,
-//     required this.repository,
-//   }) : super(key: key);
-
-//   Future<String> _loadAssetContent(String assetPath) async {
-//     try {
-//       // Get the asset content using the repository
-//       final data = await repository.getAssetByPath(assetPath);
-//       return data;
-//     } catch (e) {
-//       print('Error loading asset: $e');
-//       return '';
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('P1 Assets - Important'),
-//       ),
-//       body: Obx(
-//         () {
-//           if (assetsController.state.p1Section?.asset.isEmpty ?? true) {
-//             return const Center(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   CircularProgressIndicator(),
-//                   SizedBox(height: 20),
-//                   Text('Loading P1 assets...'),
-//                 ],
-//               ),
-//             );
-//           }
-
-//           final assetPath = assetsController.state.p1Section!.asset.value;
-
-//           return FutureBuilder<String>(
-//             future: _loadAssetContent(assetPath),
-//             builder: (context, snapshot) {
-//               if (snapshot.connectionState == ConnectionState.waiting) {
-//                 return const Center(
-//                   child: CircularProgressIndicator(),
-//                 );
-//               }
-
-//               if (snapshot.hasError) {
-//                 return Center(
-//                   child: Column(
-//                     mainAxisAlignment: MainAxisAlignment.center,
-//                     children: [
-//                       const Icon(Icons.error_outline,
-//                           color: Colors.red, size: 60),
-//                       const SizedBox(height: 20),
-//                       Text('Error loading asset: ${snapshot.error}'),
-//                     ],
-//                   ),
-//                 );
-//               }
-
-//               final assetContent = snapshot.data ?? '';
-//               return ImageCard(
-//                 asset: assetContent,
-//                 title: assetsController.state.p1Section!.title,
-//               );
-//             },
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
-// /// Screen displaying P2 assets
-// class P2AssetsScreen extends StatelessWidget {
-//   final AssetsController assetsController;
-//   final BaseAssetRepository repository;
-
-//   const P2AssetsScreen({
-//     Key? key,
-//     required this.assetsController,
-//     required this.repository,
-//   }) : super(key: key);
-
-//   Future<String> _loadAssetContent(String assetPath) async {
-//     try {
-//       // Get the asset content using the repository
-//       final data = await repository.getAssetByPath(assetPath);
-//       return data;
-//     } catch (e) {
-//       print('Error loading asset: $e');
-//       return '';
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('P2 Assets - Optional'),
-//       ),
-//       body: Obx(() {
-//         if (assetsController.state.p2Section?.asset.isEmpty ?? true) {
-//           return const Center(
-//             child: Column(
-//               mainAxisAlignment: MainAxisAlignment.center,
-//               children: [
-//                 CircularProgressIndicator(),
-//                 SizedBox(height: 20),
-//                 Text('Loading P2 assets...'),
-//               ],
-//             ),
-//           );
-//         }
-
-//         final assetPath = assetsController.state.p2Section!.asset.value;
-
-//         return FutureBuilder<String>(
-//           future: _loadAssetContent(assetPath),
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return const Center(
-//                 child: CircularProgressIndicator(),
-//               );
-//             }
-
-//             if (snapshot.hasError) {
-//               return Center(
-//                 child: Column(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     const Icon(Icons.error_outline,
-//                         color: Colors.red, size: 60),
-//                     const SizedBox(height: 20),
-//                     Text('Error loading asset: ${snapshot.error}'),
-//                   ],
-//                 ),
-//               );
-//             }
-
-//             final assetContent = snapshot.data ?? '';
-//             return ImageCard(
-//               asset: assetContent,
-//               title: assetsController.state.p2Section!.title,
-//             );
-//           },
-//         );
-//       }),
-//     );
-//   }
-// }
 
 /// Widget to display images with support for base64, URL sources, and file paths
 class ImageCard extends StatelessWidget {
