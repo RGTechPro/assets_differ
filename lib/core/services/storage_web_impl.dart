@@ -78,12 +78,14 @@ class StorageImplementationWeb implements StorageInterface {
       final ObjectStore store = txn.objectStore(_storeName);
       
       // Find asset by path
-      final Map<String, dynamic>? asset = (await store.getObject(assetPath)) as Map<String, dynamic>?;
+      final dynamic rawAsset = await store.getObject(assetPath);
       
       // Complete the transaction
       await txn.completed;
       
-      if (asset != null) {
+      if (rawAsset != null) {
+        // Safely convert LinkedMap to Map<String, dynamic>
+        final Map<String, dynamic> asset = Map<String, dynamic>.from(rawAsset as Map);
         return asset['data'] as String;
       } else {
         print('Asset not found in IndexedDB: $assetPath');
@@ -105,9 +107,9 @@ class StorageImplementationWeb implements StorageInterface {
       final ObjectStore store = txn.objectStore(_storeName);
       
       // Check if asset exists first
-      final Map<String, dynamic>? asset = (await store.getObject(assetPath)) as Map<String, dynamic>?;
+      final dynamic rawAsset = await store.getObject(assetPath);
       
-      if (asset != null) {
+      if (rawAsset != null) {
         // Delete the asset
         await store.delete(assetPath);
         

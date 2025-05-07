@@ -1,22 +1,35 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter/foundation.dart';
 import 'storage_interface.dart';
 
 /// Implementation of storage for non-web platforms using the file system
 class StorageImplementationIO implements StorageInterface {
   /// Get the app's document directory
   Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
+    if (kIsWeb) {
+      // For web platform, return a placeholder path since IndexedDB is used
+      return '';
+    } else {
+      // For mobile/desktop platforms, use the actual file system
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    }
   }
   
   /// Get the assets folder path
   Future<String> get _assetsPath async {
     final localPath = await _localPath;
+    
+    if (kIsWeb) {
+      // For web platform, just return the placeholder path
+      return localPath;
+    }
+    
     final assetsDir = Directory(path.join(localPath));
     
-    // Create assets directory if it doesn't exist
+    // Create assets directory if it doesn't exist (only for non-web)
     if (!await assetsDir.exists()) {
       await assetsDir.create(recursive: true);
     }
@@ -26,6 +39,10 @@ class StorageImplementationIO implements StorageInterface {
   
   @override
   Future<void> saveAsset(String assetPath, String data) async {
+    if (kIsWeb) {
+      throw UnsupportedError('IO storage implementation cannot be used on web');
+    }
+    
     final basePath = await _assetsPath;
     final fullPath = path.join(basePath, assetPath);
     
@@ -44,6 +61,10 @@ class StorageImplementationIO implements StorageInterface {
   
   @override
   Future<String> getAsset(String assetPath) async {
+    if (kIsWeb) {
+      throw UnsupportedError('IO storage implementation cannot be used on web');
+    }
+    
     final basePath = await _assetsPath;
     final fullPath = path.join(basePath, assetPath);
     
@@ -60,6 +81,10 @@ class StorageImplementationIO implements StorageInterface {
   
   @override
   Future<bool> deleteAsset(String assetPath) async {
+    if (kIsWeb) {
+      throw UnsupportedError('IO storage implementation cannot be used on web');
+    }
+    
     final basePath = await _assetsPath;
     final fullPath = path.join(basePath, assetPath);
     

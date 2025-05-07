@@ -12,9 +12,3 @@ abstract class StorageInterface {
   /// Close any resources
   Future<void> close();
 }
-
-/// Factory function to create the appropriate storage implementation
-///
-/// This is implemented in both storage_io.dart and storage_web.dart
-/// and will return the appropriate implementation based on the platform
-external StorageInterface createStorageImplementation();

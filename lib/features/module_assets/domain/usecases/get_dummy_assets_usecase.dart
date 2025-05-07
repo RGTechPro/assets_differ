@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 import '../../../module_assets/presentation/controllers/assets_controller.dart';
 import '../../data/repository/repository_interface.dart';
 
@@ -151,9 +152,14 @@ class GetDummyAssetsUseCase {
   }
 
   Future<String> _baseLocalAssetPath() async {
-    
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path + '/';   
+    if (kIsWeb) {
+      // For web platform, use a placeholder path since we'll store data in IndexedDB
+      return '';
+    } else {
+      // For mobile/desktop platforms, use the actual file system
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path + '/';
+    }
   }
 
   /// Save new and updated assets to local storage
