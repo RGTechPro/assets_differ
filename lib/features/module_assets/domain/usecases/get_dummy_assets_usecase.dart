@@ -1,214 +1,202 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
-import '../../../module_assets/presentation/controllers/assets_controller.dart';
-import '../../data/repository/repository_interface.dart';
+import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
+import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
+import 'package:assets_differ/features/module_assets/data/repository/repository_interface.dart';
 
-/// Use case to provide DummyAssets
+/// Use case to provide and manage DummyAssets
 class GetDummyAssetsUseCase {
   final PlatformInfo _platformInfo;
   final BaseAssetRepository _repository;
+  final _logger = AssetLogger('GetDummyAssetsUseCase');
 
-  GetDummyAssetsUseCase(this._repository, this._platformInfo);
-
+  // Observable asset state
   final Rx<DummyAssets> _dummyAssets = DummyAssets(
     logoImage: kZeroPixel,
     menuIcon: kZeroPixel,
     bannerImage: kZeroPixel,
   ).obs;
 
+  GetDummyAssetsUseCase(this._repository, this._platformInfo);
+
+  /// The current DummyAssets as an observable
   Rx<DummyAssets> get dummyAssets => _dummyAssets;
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<DummyAssets> execute() async {
-    // First, load local manifest to get the current version
-    final AssetManifest? localManifest = await _repository.getLocalManifest();
+    try {
+      // First, load local manifest to get the current version
+      final AssetManifest? localManifest = await _repository.getLocalManifest();
 
-    // Use the repository to fetch remote data using the current version
-    final AssetManifest remoteManifest =
-        await _repository.getRemoteManifest("1.0.0");
+      // Use the repository to fetch remote data using the current version
+      final AssetManifest remoteManifest =
+          await _repository.getRemoteManifest(_platformInfo.version);
 
-    // Extract assets by priority
-    List<AssetItem> p0Assets = [];
-    List<AssetItem> p1Assets = [];
-    List<AssetItem> p2Assets = [];
+      // Analyze the differences between local and remote manifests
+      final ManifestDifference diff =
+          _compareManifests(localManifest, remoteManifest);
 
-    // Create lists to track differences between local and remote manifests
-    List<AssetItem> newAssetItemList = [];
-    List<AssetItem> removedAssetItemList = [];
-    List<AssetItem> updatedAssetItemList = [];
+      // P0 assets need to be processed immediately
+      await _saveAssetsToLocalStorage(diff.priorityAssets.p0);
 
-    // Compare local and remote manifests if local manifest exists
-    if (localManifest != null) {
-      // Create maps for easier lookup
+      // Generate the initial assets map with P0 assets
+      final dummyAssets = await _generateDummyAssets(remoteManifest, 0);
+      _dummyAssets.value = dummyAssets;
+
+      // Process remaining assets in the background
+      _updateAssetsInBackground(diff, remoteManifest);
+
+      return dummyAssets;
+    } catch (e, stackTrace) {
+      _logger.error('Failed to execute GetDummyAssetsUseCase', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Compare local and remote manifests to identify differences
+  ManifestDifference _compareManifests(
+      AssetManifest? localManifest, AssetManifest remoteManifest) {
+    final priorityAssets = _PriorityAssets();
+    final List<AssetItem> newAssets = [];
+    final List<AssetItem> removedAssets = [];
+    final List<AssetItem> updatedAssets = [];
+
+    if (localManifest == null) {
+      // If no local manifest exists, all remote assets are new
+      newAssets.addAll(remoteManifest.assets);
+      _logger.info(
+          'No local manifest found. All ${newAssets.length} assets are new.');
+    } else {
+      // Create maps for efficient lookups
       final Map<String, AssetItem> localAssetMap = {
         for (var asset in localManifest.assets) asset.path: asset
       };
-
       final Map<String, AssetItem> remoteAssetMap = {
         for (var asset in remoteManifest.assets) asset.path: asset
       };
 
-      // Find new assets (in remote but not in local)
+      // Find new and updated assets
       for (var asset in remoteManifest.assets) {
         if (!localAssetMap.containsKey(asset.path)) {
-          newAssetItemList.add(asset);
+          newAssets.add(asset);
         } else {
-          // Check if existing asset has been updated (different hash or priority)
+          // Check if existing asset has been updated
           final localAsset = localAssetMap[asset.path]!;
           if (localAsset.hash != asset.hash ||
               localAsset.priority != asset.priority) {
-            updatedAssetItemList.add(asset);
+            updatedAssets.add(asset);
           }
         }
       }
 
-      // Find removed assets (in local but not in remote)
+      // Find removed assets
       for (var asset in localManifest.assets) {
         if (!remoteAssetMap.containsKey(asset.path)) {
-          removedAssetItemList.add(asset);
+          removedAssets.add(asset);
         }
       }
-    } else {
-      // If no local manifest exists, all remote assets are new
-      newAssetItemList = remoteManifest.assets;
-      print(
-          'No local manifest found. All ${newAssetItemList.length} assets are new.');
     }
 
     // Categorize new and updated assets by priority
-    for (var asset in [...newAssetItemList, ...updatedAssetItemList]) {
+    for (var asset in [...newAssets, ...updatedAssets]) {
       switch (asset.priority) {
         case 0:
-          p0Assets.add(asset);
+          priorityAssets.p0.add(asset);
           break;
         case 1:
-          p1Assets.add(asset);
+          priorityAssets.p1.add(asset);
           break;
         case 2:
-          p2Assets.add(asset);
+          priorityAssets.p2.add(asset);
           break;
         default:
-          print(
+          _logger.warn(
               'Asset ${asset.path} has unconventional priority: ${asset.priority}');
           break;
       }
     }
 
-    // Save the new and updated assets to local storage
-    await _saveAssetsToLocalStorage(p0Assets);
-
-    final String localPath = await _baseLocalAssetPath();
-
-    Map<String, String> p0AssetsMap = {
-      for (var asset in remoteManifest.assets.where((e)=>e.priority==0)) asset.path: localPath + asset.path,
-    };
-
-    final dummyAssets = DummyAssets.fromAssetMap(p0AssetsMap);
-    _dummyAssets.value = dummyAssets;
-    _updateAssetsInBackGround(
-      p0Assets,
-      p1Assets,
-      p2Assets,
-      remoteManifest,
-      removedAssetItemList,
+    return ManifestDifference(
+      priorityAssets: priorityAssets,
+      newAssets: newAssets,
+      removedAssets: removedAssets,
+      updatedAssets: updatedAssets,
     );
-    return dummyAssets;
   }
 
-  Future<void> _updateAssetsInBackGround(
-    List<AssetItem> p0AssetList,
-    List<AssetItem> p1AssetList,
-    List<AssetItem> p2AssetList,
-    AssetManifest remoteManifest,
-    List<AssetItem> removedAssetItemList,
-  ) async {
-    await _saveAssetsToLocalStorage(p1AssetList);
-    await _saveAssetsToLocalStorage(p2AssetList);
+  /// Process remaining assets and update in background
+  Future<void> _updateAssetsInBackground(
+      ManifestDifference diff, AssetManifest remoteManifest) async {
+    try {
+      // Process P1 and P2 assets in order
+      await _saveAssetsToLocalStorage(diff.priorityAssets.p1);
+      await _saveAssetsToLocalStorage(diff.priorityAssets.p2);
 
-    // Delete removed assets from local storage
-    if (removedAssetItemList.isNotEmpty) {
-      await _deleteRemovedAssets(removedAssetItemList);
-    }
-
-    // Save the updated manifest to local storage
-    await _repository.setLocalManifest(remoteManifest);
-
-    final String localPath = await _baseLocalAssetPath();
-
-    Map<String, String> assetMap = {
-      for (var asset in remoteManifest.assets.where((e)=>e.priority==0)) asset.path: localPath + asset.path,
-      for (var asset in remoteManifest.assets.where((e)=>e.priority==1)) asset.path: localPath + asset.path,
-      for (var asset in remoteManifest.assets.where((e)=>e.priority==2)) asset.path: localPath + asset.path,
-    };
-
-    final dummyAssets = DummyAssets.fromAssetMap(assetMap);
-    _dummyAssets.value = dummyAssets;
-  }
-
-  Future<String> _baseLocalAssetPath() async {
-    if (kIsWeb) {
-      // For web platform, use a placeholder path since we'll store data in IndexedDB
-      return '';
-    } else {
-      // For mobile/desktop platforms, use the actual file system
-      final directory = await getApplicationDocumentsDirectory();
-      return directory.path + '/';
-    }
-  }
-
-  /// Save new and updated assets to local storage
-  Future<void> _saveAssetsToLocalStorage(List<AssetItem> assetList) async {
-    // Save new assets to local storage
-    if (assetList.isNotEmpty) {
-      // Process and save each new asset
-      for (var asset in assetList) {
-        await _downloadAndSaveAsset(asset);
+      // Remove deleted assets
+      if (diff.removedAssets.isNotEmpty) {
+        await _deleteRemovedAssets(diff.removedAssets);
       }
+
+      // Save the updated manifest to local storage
+      await _repository.setLocalManifest(remoteManifest);
+
+      // Update the asset map with all priorities
+      final dummyAssets = await _generateDummyAssets(remoteManifest, null);
+      _dummyAssets.value = dummyAssets;
+
+      _logger.info('Background asset update complete');
+    } catch (e, stackTrace) {
+      _logger.error('Error in background asset update', e, stackTrace);
     }
+  }
+
+  /// Generate a DummyAssets object from assets in the manifest
+  /// If priorityFilter is provided, only includes assets with that priority
+  Future<DummyAssets> _generateDummyAssets(
+    AssetManifest manifest,
+    int? priorityFilter,
+  ) async {
+    final String localPath = await _repository.baseLocalAssetPath();
+
+    Map<String, String> assetMap = {};
+
+    // Filter assets by priority if needed
+    final assetsToInclude = priorityFilter != null
+        ? manifest.assets.where((e) => e.priority == priorityFilter)
+        : manifest.assets;
+
+    // Build the asset map
+    for (var asset in assetsToInclude) {
+      assetMap[asset.path] = localPath + asset.path;
+    }
+
+    return DummyAssets.fromAssetMap(assetMap);
+  }
+
+  /// Save assets to local storage
+  Future<void> _saveAssetsToLocalStorage(List<AssetItem> assetList) async {
+    if (assetList.isEmpty) return;
+
+    _logger.info('Saving ${assetList.length} assets to local storage');
+
+    // Process each asset in parallel for efficiency
+    await Future.wait(
+      assetList.map((asset) => _downloadAndSaveAsset(asset)),
+    );
   }
 
   /// Download and save a single asset based on its type
   Future<void> _downloadAndSaveAsset(AssetItem asset) async {
     try {
-      final String path = asset.path.toLowerCase();
+      _logger.debug('Downloading image: ${asset.url}');
 
-      // Check if this is an image asset
-      if (path.endsWith('.png') ||
-          path.endsWith('.jpg') ||
-          path.endsWith('.jpeg') ||
-          path.endsWith('.gif') ||
-          path.endsWith('.webp') ||
-          path.endsWith('.svg')) {
-        print('Downloading image: ${asset.url}');
+      ImageUploadResponse response =
+          await _repository.downloadAndSaveAsset(asset);
 
-        // Download the image data as bytes
-        final Uint8List imageBytes = await loadImageFromUrl(asset.url);
-
-        // Convert bytes to base64 string for storage
-        final String base64Image = base64Encode(imageBytes);
-
-        // Save the image data to local storage
-        await _repository.saveAssetByPath(asset.path, base64Image);
-
-        print(
-            'Successfully saved image: ${asset.path} (${imageBytes.length} bytes)');
-      } else {
-        // Handle other types of assets or use placeholder content
-        final String assetContent =
-            'Content for ${asset.path} with hash ${asset.hash}';
-        await _repository.saveAssetByPath(asset.path, assetContent);
-
-        print('Saved placeholder content for: ${asset.path}');
-      }
-    } catch (e) {
-      // Log the error but continue with other assets
-      print('Failed to process asset ${asset.path}: $e');
+      _logger.debug(
+          'Saved image: ${asset.path} (${response.imageBytesLength} bytes)');
+    } catch (e, stackTrace) {
+      _logger.error('Failed to process asset ${asset.path}', e, stackTrace);
     }
   }
 
@@ -216,46 +204,64 @@ class GetDummyAssetsUseCase {
   Future<void> _deleteRemovedAssets(List<AssetItem> removedAssets) async {
     if (removedAssets.isEmpty) return;
 
+    _logger.info('Deleting ${removedAssets.length} removed assets');
+
     // Delete each asset from storage
     for (var asset in removedAssets) {
       try {
         await _repository.deleteAssetByPath(asset.path);
-        print('Successfully deleted asset: ${asset.path}');
+        _logger.debug('Deleted asset: ${asset.path}');
       } catch (e) {
-        print('Failed to delete asset ${asset.path}: $e');
+        _logger.error('Failed to delete asset ${asset.path}', e);
       }
     }
+  }
+}
 
-    print('Asset deletion completed');
+/// A class to hold assets categorized by priority
+class _PriorityAssets {
+  final List<AssetItem> p0 = [];
+  final List<AssetItem> p1 = [];
+  final List<AssetItem> p2 = [];
+}
+
+/// A class to represent differences between manifests
+class ManifestDifference {
+  final _PriorityAssets priorityAssets;
+  final List<AssetItem> newAssets;
+  final List<AssetItem> removedAssets;
+  final List<AssetItem> updatedAssets;
+
+  ManifestDifference({
+    required this.priorityAssets,
+    required this.newAssets,
+    required this.removedAssets,
+    required this.updatedAssets,
+  });
+}
+
+/// Simple logger class for asset operations
+class AssetLogger {
+  final String _tag;
+
+  AssetLogger(this._tag);
+
+  void debug(String message) {
+    if (kDebugMode) print('[$_tag] DEBUG: $message');
   }
 
-  /// Load image data from a network URL into bytes
-  ///
-  /// Parameters:
-  /// - imageUrl: The URL of the image to load
-  ///
-  /// Returns:
-  /// - Future<Uint8List>: The image data as bytes
-  Future<Uint8List> loadImageFromUrl(String imageUrl) async {
-    try {
-      // Make an HTTP GET request to the provided URL
-      final http.Response response = await http.get(Uri.parse(imageUrl));
+  void info(String message) {
+    print('[$_tag] INFO: $message');
+  }
 
-      // Check if the request was successful
-      if (response.statusCode == 200) {
-        // Return the body as bytes
-        return response.bodyBytes;
-      } else {
-        // Log error and throw exception with status code
-        print(
-            'Failed to load image from $imageUrl. Status code: ${response.statusCode}');
-        throw Exception(
-            'Failed to load image. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      // Log and rethrow any errors that occur during the request
-      print('Error loading image from $imageUrl: $e');
-      throw Exception('Error loading image: $e');
+  void warn(String message) {
+    print('[$_tag] WARN: $message');
+  }
+
+  void error(String message, [dynamic error, StackTrace? stackTrace]) {
+    print('[$_tag] ERROR: $message${error != null ? ' - $error' : ''}');
+    if (kDebugMode && stackTrace != null) {
+      print('[$_tag] STACK: $stackTrace');
     }
   }
 }

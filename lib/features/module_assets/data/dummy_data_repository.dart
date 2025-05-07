@@ -1,188 +1,52 @@
-import 'package:assets_differ/core/services/file_storage_service.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:assets_differ/features/module_assets/data/sources/local_asset_data_source.dart';
+import 'package:assets_differ/features/module_assets/data/sources/remote_asset_data_source.dart';
 import 'repository/repository_interface.dart';
 
 /// Repository for serving static dummy data for testing
+/// This class delegates operations to the appropriate data source
 class DummyDataRepository implements BaseAssetRepository {
-  /// Fetch asset data based on version
-  /// Returns a Future with the JSON data for the requested version
+  final LocalAssetDataSource _localDataSource;
+  final RemoteAssetDataSource _remoteDataSource;
+
+  /// Constructor with dependency injection
+  DummyDataRepository({
+    LocalAssetDataSource? localDataSource,
+    RemoteAssetDataSource? remoteDataSource,
+  })  : _localDataSource = localDataSource ?? LocalAssetDataSource(),
+        _remoteDataSource = remoteDataSource ?? RemoteAssetDataSource();
+
   @override
   Future<AssetManifest> getRemoteManifest(String version) async {
-    // Simulate fetching data from a remote source
-    return Future.delayed(const Duration(milliseconds: 1), () {
-      switch (version) {
-        case '1.0.0':
-          return AssetManifest.fromJson(v1Json);
-        case '2.0.0':
-          return AssetManifest.fromJson(v2Json);
-        case '3.0.0':
-          return AssetManifest.fromJson(v3Json);
-        default:
-          // Default to latest version if not found
-          return AssetManifest.fromJson(v3Json);
-      }
-    });
+    return await _remoteDataSource.getRemoteManifest(version);
   }
-
-  // JSON data for version 1.0.0
-  final Map<String, dynamic> v1Json = {
-    "version": "1.0.0",
-    "module": "lobby",
-    "assets": [
-      {
-        "path": "assets/logo.png",
-        "hash": "abc123def",
-        "url": "https://picsum.photos/id/1011/300/200",
-        "priority": 0
-      },
-      {
-        "path": "assets/menu_icon.png",
-        "hash": "def456ghi",
-        "url": "https://picsum.photos/id/1025/100/100",
-        "priority": 1
-      },
-      {
-        "path": "assets/banner1.png",
-        "hash": "ghi789jkl",
-        "url": "https://picsum.photos/id/1038/600/300",
-        "priority": 2
-      }
-    ]
-  };
-
-  // JSON data for version 2.0.0
-  final Map<String, dynamic> v2Json = {
-    "version": "2.0.0",
-    "module": "lobby",
-    "assets": [
-      {
-        "path": "assets/images/logo.png",
-        "hash": "xyz321uvw",
-        "url": "https://picsum.photos/id/1050/300/200",
-        "priority": 0
-      },
-      {
-        "path": "assets/menu_icon.png",
-        "hash": "uvw654rst",
-        "url": "https://picsum.photos/id/1062/100/100",
-        "priority": 2 
-      },
-      {
-        "path": "assets/dark_logo.png",
-        "hash": "mno999pqr",
-        "url": "https://picsum.photos/id/1071/300/200",
-        "priority": 1
-      }
-    ]
-  };
-
-  // JSON data for version 3.0.0
-  final Map<String, dynamic> v3Json = {
-    "version": "3.0.0",
-    "module": "lobby",
-    "assets": [
-      {
-        "path": "images/logo.png",
-        "hash": "h1v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/images/logo.png",
-        "priority": 0
-      },
-      {
-        "path": "icons/menu/menu_icon.png",
-        "hash": "h2v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/icons/menu/menu_icon.png",
-        "priority": 1
-      },
-      {
-        "path": "banners/home/banner1.jpg",
-        "hash": "h3v3",
-        "url": "https://cdn.example.com/assets/v3.0.0/banners/home/banner1.jpg",
-        "priority": 2
-      }
-    ]
-  };
-
-  // Key for storing manifest in SharedPreferences
-  static const String _manifestKey = 'local_asset_manifest';
 
   @override
   Future<AssetManifest?> getLocalManifest() async {
-    try {
-      // Get instance of SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-
-      // Retrieve stored manifest JSON string
-      final String? manifestJson = prefs.getString(_manifestKey);
-
-      if (manifestJson != null && manifestJson.isNotEmpty) {
-        // Parse the JSON string to AssetManifest
-        return AssetManifest.fromJsonString(manifestJson);
-      }
-    } catch (e) {
-      print('Error retrieving manifest from SharedPreferences: $e');
-    }
-
-    // Return null if no stored manifest is found or an error occurs
-    return null;
+    return await _localDataSource.getLocalManifest();
   }
 
   @override
   Future<void> setLocalManifest(AssetManifest manifest) async {
-    try {
-      // Convert manifest to JSON string
-      final String manifestJson = manifest.toJsonString();
-
-      // Store in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_manifestKey, manifestJson);
-
-      print('Local manifest updated in SharedPreferences');
-    } catch (e) {
-      print('Error saving manifest to SharedPreferences: $e');
-    }
+    await _localDataSource.setLocalManifest(manifest);
   }
 
   @override
   Future<void> deleteAssetByPath(String path) async {
-    try {
-      final result = await FileStorageService.instance.deleteAssetByPath(path);
-      if (result) {
-        print('Asset deleted successfully: $path');
-      } else {
-        print('Asset not found or could not be deleted: $path');
-      }
-    } catch (e) {
-      print('Error deleting asset: $e');
-    }
+    await _localDataSource.deleteAssetByPath(path);
   }
 
   @override
   Future<String> getAssetByPath(String path) async {
-    try {
-      final data = await FileStorageService.instance.getAssetByPath(path);
-
-      if (data.isNotEmpty) {
-        return data;
-      } else {
-        print('Asset not found: $path');
-        return '';
-      }
-    } catch (e) {
-      print('Error retrieving asset: $e');
-      return '';
-    }
+    return await _localDataSource.getAssetByPath(path);
   }
 
   @override
-  Future<void> saveAssetByPath(String path, String data) async {
-    try {
-      await FileStorageService.instance.saveAssetByPath(path, data);
-      print('Asset saved successfully: $path');
-      print('Data size: ${data.length} bytes');
-    } catch (e) {
-      print('Error saving asset: $e');
-    }
+  Future<String> baseLocalAssetPath() async {
+    return await _localDataSource.baseLocalAssetPath();
   }
 
   /// Clear all local assets and the local manifest
@@ -190,7 +54,7 @@ class DummyDataRepository implements BaseAssetRepository {
     try {
       // Step 1: Get the local manifest first to know which assets to delete
       final manifest = await getLocalManifest();
-      
+
       // Step 2: Delete all the assets if we have a manifest
       if (manifest != null) {
         for (var asset in manifest.assets) {
@@ -198,14 +62,32 @@ class DummyDataRepository implements BaseAssetRepository {
           print('Deleted asset: ${asset.path}');
         }
       }
-      
+
       // Step 3: Clear the manifest from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_manifestKey);
-      
+      await _localDataSource.clearManifest();
+
       print('All local assets and manifest cleared successfully');
     } catch (e) {
       print('Error clearing local assets: $e');
     }
+  }
+
+  @override
+
+  /// Download and save a single asset based on its type
+  Future<ImageUploadResponse> downloadAndSaveAsset(AssetItem asset) async {
+    // Download the image data as bytes
+    final Uint8List imageBytes =
+        await _remoteDataSource.loadImageFromUrl(asset.url);
+
+    // Convert bytes to base64 string for storage
+    final String base64Image = base64Encode(imageBytes);
+
+    // Save the image data to local storage
+    await _localDataSource.saveAssetByPath(asset.path, base64Image);
+    return ImageUploadResponse(
+      imageBytesLength: imageBytes.length,
+      isSuccess: true,
+    );
   }
 }

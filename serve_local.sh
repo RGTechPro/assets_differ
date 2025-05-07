@@ -7,7 +7,7 @@ echo "==============================="
 if [ ! -d "build/web" ]; then
   echo "⚠️  build/web directory not found!"
   echo "Building Flutter web application..."
-  flutter build web
+  fvm flutter build web
   
   if [ $? -ne 0 ]; then
     echo "❌ Flutter build failed. Please fix any issues and try again."
