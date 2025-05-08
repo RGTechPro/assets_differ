@@ -16,7 +16,6 @@ class GenerateDummyAssetsUseCase {
     AssetManifest manifest,
     int? priorityFilter,
   ) async {
-    final String localPath = await _repository.baseLocalAssetPath();
 
     Map<String, String> assetMap = {};
 
@@ -27,7 +26,7 @@ class GenerateDummyAssetsUseCase {
 
     // Build the asset map
     for (var asset in assetsToInclude) {
-      assetMap[asset.path] = localPath + asset.path;
+      assetMap[asset.path] = await _repository.getAssetRefPath(asset.path);
     }
 
     _logger.debug('Generated DummyAssets with ${assetMap.length} assets');

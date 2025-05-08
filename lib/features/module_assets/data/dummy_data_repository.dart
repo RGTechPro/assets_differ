@@ -34,35 +34,17 @@ class DummyDataRepository {
     await _localDataSource.deleteAssetByPath(path);
   }
 
-  Future<String> getAssetByPath(String path) async {
+  Future<Uint8List> getAssetByPath(String path) async {
     return await _localDataSource.getAssetByPath(path);
   }
 
-  Future<String> baseLocalAssetPath() async {
-    return await _localDataSource.baseLocalAssetPath();
+  Future<String> getAssetRefPath(String path) async {
+    return await _localDataSource.getAssetRefPath(path);
   }
 
-  /// Clear all local assets and the local manifest
-  Future<void> clearAllLocalAssets() async {
-    try {
-      // Step 1: Get the local manifest first to know which assets to delete
-      final manifest = await getLocalManifest();
-
-      // Step 2: Delete all the assets if we have a manifest
-      if (manifest != null) {
-        for (var asset in manifest.assets) {
-          await deleteAssetByPath(asset.path);
-          print('Deleted asset: ${asset.path}');
-        }
-      }
-
-      // Step 3: Clear the manifest from SharedPreferences
-      await _localDataSource.clearManifest();
-
-      print('All local assets and manifest cleared successfully');
-    } catch (e) {
-      print('Error clearing local assets: $e');
-    }
+  /// Clear local manifest from storage
+  Future<void> clearLocalManifest() async {
+    await _localDataSource.clearManifest();
   }
 
   /// Download and save a single asset based on its type

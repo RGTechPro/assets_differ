@@ -26,11 +26,33 @@ class AssetCleanupUseCase {
       }
     }
   }
-  
+
   /// Clean up all local assets based on a difference report
   Future<void> cleanupBasedOnDiff(ManifestDifference diff) async {
     if (diff.removedAssets.isEmpty) return;
-    
+
     await deleteRemovedAssets(diff.removedAssets);
+  }
+
+  Future<void> deleteAllData() async {
+    try {
+      // Step 1: Get the local manifest first to know which assets to delete
+      final manifest = await _repository.getLocalManifest();
+
+      // Step 2: Delete all the assets if we have a manifest
+      if (manifest != null) {
+        for (var asset in manifest.assets) {
+          await _repository.deleteAssetByPath(asset.path);
+          print('Deleted asset: ${asset.path}');
+        }
+      }
+
+      // Step 3: Clear the manifest from SharedPreferences
+      await _repository.clearLocalManifest();
+
+      print('All local assets and manifest cleared successfully');
+    } catch (e) {
+      print('Error clearing local assets: $e');
+    }
   }
 }

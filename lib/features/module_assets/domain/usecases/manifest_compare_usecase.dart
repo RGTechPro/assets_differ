@@ -10,7 +10,9 @@ class ManifestCompareUseCase {
 
   /// Compare local and remote manifests to identify differences
   ManifestDifference compareManifests(
-      AssetManifest? localManifest, AssetManifest remoteManifest,) {
+    AssetManifest? localManifest,
+    AssetManifest remoteManifest,
+  ) {
     final priorityAssets = _PriorityAssets();
     final List<AssetItem> newAssets = [];
     final List<AssetItem> removedAssets = [];

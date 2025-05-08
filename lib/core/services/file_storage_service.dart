@@ -67,4 +67,13 @@ class FileStorageService {
   Future<void> closeResources() async {
     await _storage.close();
   }
+
+  Future<String> getBaseLocalAssetPath() async {
+    try {
+      return await _storage.getBaseLocalAssetPath();
+    } catch (e) {
+      print('Error getting base local asset path: $e');
+      return '';
+    }
+  }
 }

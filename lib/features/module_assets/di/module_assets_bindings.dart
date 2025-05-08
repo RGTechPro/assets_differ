@@ -26,7 +26,7 @@ class ModuleAssetsDependencyProvider {
   GenerateDummyAssetsUseCase? _generateDummyAssetsUseCase;
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
 
-  ModuleAssetsConfig _assetsConfig;
+  final ModuleAssetsConfig _assetsConfig;
 
   VersionCompareUseCase? _versionCompareUseCase;
 

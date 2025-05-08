@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:assets_differ/core/services/file_storage_service.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:flutter/foundation.dart';
@@ -63,19 +66,23 @@ class LocalAssetDataSource {
   }
 
   /// Retrieves an asset at the specified path
-  Future<String> getAssetByPath(String path) async {
+  Future<Uint8List> getAssetByPath(String path) async {
     try {
       final data = await FileStorageService.instance.getAssetByPath(path);
 
       if (data.isNotEmpty) {
-        return data;
+      
+                  // Extract base64 data if it's a data URI
+          String base64String = data;
+          if (data.contains(',')) {
+            base64String = data.split(',')[1];
+          } // Decode base64 to bytes
+            return base64Decode(base64String);
       } else {
-        print('Asset not found: $path');
-        return '';
+        throw Exception('Asset not found: $path');
       }
     } catch (e) {
-      print('Error retrieving asset: $e');
-      return '';
+      return Uint8List(0); // Return empty bytes on error
     }
   }
 
@@ -102,14 +109,8 @@ class LocalAssetDataSource {
   }
 
   /// Gets the base path for storing local assets
-  Future<String> baseLocalAssetPath() async {
-    if (kIsWeb) {
-      // For web platform, use a placeholder path since we'll store data in IndexedDB
-      return '';
-    } else {
-      // For mobile/desktop platforms, use the actual file system
-      final directory = await getApplicationDocumentsDirectory();
-      return '${directory.path}/';
-    }
+  Future<String> getAssetRefPath(String assetPath) async {
+    return await FileStorageService.instance.getBaseLocalAssetPath() +
+        assetPath;
   }
 }

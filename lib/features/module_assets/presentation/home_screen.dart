@@ -2,30 +2,42 @@ import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/config/app_routes.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/asset_cleanup_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 
+/// State class for the HomeScreenController
+class HomeScreenState {
+  final List<String> availableVersions = ['1.0.0', '1.1.0', '1.2.0'];
+  final RxString selectedVersion;
+
+  HomeScreenState({
+    required this.selectedVersion,
+  });
+}
+
 /// Controller for the home screen
-class HomeScreenController extends GetxController {
-  final Rx<String> currentVersion = AssetConfig.appVersion.obs;
+class HomeScreenViewModel extends GetxController {
+  final HomeScreenState state = HomeScreenState(
+    selectedVersion: AssetConfig.appVersion.obs,
+  );
 
   void onVersionChanged(String newVersion) {
-    currentVersion.value = newVersion;
+    if (state.availableVersions.contains(newVersion)) {
+      state.selectedVersion.value = newVersion;
+    }
   }
 
   Future<void> clearAllAssets() async {
     try {
-      // Create a temporary dependency provider just to clear assets
-      final tempProvider = ModuleAssetsDependencyProvider(
-        assetsConfig: ModuleAssetsConfig(
-          curentAssetVersion: currentVersion.value,
-        ),
-      );
+      AssetCleanupUseCase assetCleanupUseCase =
+          AssetCleanupUseCase(DummyDataRepository());
 
-      await tempProvider.provideDummyDataRepository().clearAllLocalAssets();
+      await assetCleanupUseCase.deleteAllData();
 
       Get.snackbar(
         'Success',
@@ -47,13 +59,13 @@ class HomeScreenController extends GetxController {
 }
 
 /// Home screen that lists available modules
-class HomeScreen extends GetView<HomeScreenController> {
+class HomeScreen extends GetView<HomeScreenViewModel> {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     // Make sure the controller is initialized
-    Get.put(HomeScreenController());
+    Get.put(HomeScreenViewModel());
 
     return Scaffold(
       appBar: AppBar(
@@ -65,6 +77,8 @@ class HomeScreen extends GetView<HomeScreenController> {
             padding: const EdgeInsets.all(16.0),
             child: VersionSelector(
               onVersionChanged: controller.onVersionChanged,
+              selectedVersion: controller.state.selectedVersion,
+              versions: controller.state.availableVersions,
             ),
           ),
           Expanded(
@@ -87,13 +101,15 @@ class HomeScreen extends GetView<HomeScreenController> {
             borderRadius: BorderRadius.circular(8.0),
             border: Border.all(color: Colors.blue.shade200),
           ),
-          child: Obx(() => Text(
-                'Selected App Version: ${controller.currentVersion.value}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              )),
+          child: Obx(
+            () => Text(
+              'Selected App Version: ${controller.state.selectedVersion.value}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -104,7 +120,8 @@ class HomeScreen extends GetView<HomeScreenController> {
                   // Create dependency provider with current selected version when navigating
                   final dependencyProvider = ModuleAssetsDependencyProvider(
                     assetsConfig: ModuleAssetsConfig(
-                      curentAssetVersion: controller.currentVersion.value,
+                      curentAssetVersion:
+                          controller.state.selectedVersion.value,
                     ),
                   );
 
@@ -224,17 +241,6 @@ class P0AssetsScreen extends StatefulWidget {
 }
 
 class _P0AssetsScreenState extends State<P0AssetsScreen> {
-  Future<String> _loadAssetContent(String assetPath) async {
-    try {
-      // Get the asset content using the repository
-      final data = await widget.repository.getAssetByPath(assetPath);
-      return data;
-    } catch (e) {
-      print('Error loading asset: $e');
-      return '';
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -265,39 +271,11 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
           Obx(() {
             final assetPath =
                 widget.assetsController.state.p0Section!.asset.value;
-
-            return FutureBuilder<String>(
-              future: _loadAssetContent(assetPath),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            color: Colors.red, size: 50),
-                        const SizedBox(height: 10),
-                        Text('Error loading P0 asset: ${snapshot.error}'),
-                      ],
-                    ),
-                  );
-                }
-
-                final assetContent = snapshot.data ?? '';
-                return ImageCard(
-                  asset: assetContent,
-                  title: widget.assetsController.state.p0Section!.title,
-                );
-              },
+            return ImageCard(
+              asset: assetPath,
+              title: widget.assetsController.state.p0Section!.title,
+              getAssetByPath: (assetPathN) async =>
+                  widget.repository.getAssetByPath(assetPathN),
             );
           }),
 
@@ -309,60 +287,35 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Obx(() {
-            if (widget.assetsController.state.p1Section?.asset.isEmpty ??
-                true) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text('Loading P1 assets...'),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            final assetPath =
-                widget.assetsController.state.p1Section!.asset.value;
-
-            return FutureBuilder<String>(
-              future: _loadAssetContent(assetPath),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
+          Obx(
+            () {
+              if (widget.assetsController.state.p1Section?.asset.isEmpty ??
+                  true) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: Colors.red, size: 50),
-                        const SizedBox(height: 10),
-                        Text('Error loading P1 asset: ${snapshot.error}'),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
+                        Text('Loading P1 assets...'),
                       ],
                     ),
-                  );
-                }
-
-                final assetContent = snapshot.data ?? '';
-                return ImageCard(
-                  asset: assetContent,
-                  title: widget.assetsController.state.p1Section!.title,
+                  ),
                 );
-              },
-            );
-          }),
+              }
+
+              final assetPath =
+                  widget.assetsController.state.p1Section!.asset.value;
+
+              return ImageCard(
+                asset: assetPath,
+                title: widget.assetsController.state.p1Section!.title,
+                getAssetByPath: (assetPathN) async =>
+                    widget.repository.getAssetByPath(assetPathN),
+              );
+            },
+          ),
 
           const Divider(height: 32, thickness: 2),
 
@@ -372,60 +325,35 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Obx(() {
-            if (widget.assetsController.state.p2Section?.asset.isEmpty ??
-                true) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text('Loading P2 assets...'),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            final assetPath =
-                widget.assetsController.state.p2Section!.asset.value;
-
-            return FutureBuilder<String>(
-              future: _loadAssetContent(assetPath),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
+          Obx(
+            () {
+              if (widget.assetsController.state.p2Section?.asset.isEmpty ??
+                  true) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: Colors.red, size: 50),
-                        const SizedBox(height: 10),
-                        Text('Error loading P2 asset: ${snapshot.error}'),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
+                        Text('Loading P2 assets...'),
                       ],
                     ),
-                  );
-                }
-
-                final assetContent = snapshot.data ?? '';
-                return ImageCard(
-                  asset: assetContent,
-                  title: widget.assetsController.state.p2Section!.title,
+                  ),
                 );
-              },
-            );
-          }),
+              }
+
+              final assetPath =
+                  widget.assetsController.state.p2Section!.asset.value;
+
+              return ImageCard(
+                asset: assetPath,
+                title: widget.assetsController.state.p2Section!.title,
+                getAssetByPath: (assetPathN) async =>
+                    widget.repository.getAssetByPath(assetPathN),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -438,10 +366,20 @@ class ImageCard extends StatelessWidget {
     Key? key,
     required this.asset,
     required this.title,
+    required this.getAssetByPath,
   }) : super(key: key);
+
+  final Future<Uint8List> Function(String) getAssetByPath;
 
   final String asset;
   final String title;
+
+  Future<Uint8List> _loadAssetContent(String assetPath) async {
+  
+      // Get the asset content using the repository
+      return await getAssetByPath(assetPath);
+      
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -467,24 +405,83 @@ class ImageCard extends StatelessWidget {
   }
 
   Widget _buildImage(String source) {
-    try {
-      // Extract base64 data if it's a data URI
-      String base64String = source;
-      if (source.contains(',')) {
-        base64String = source.split(',')[1];
-      }
+    return NewImageWidget(
+      source: source,
+      loadAssetContent: _loadAssetContent,
+    );
+  }
+}
 
-      // Decode base64 to bytes
-      final bytes = base64Decode(base64String);
-      return Image.memory(
-        bytes,
-        height: 150,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.broken_image, size: 150);
+class NewImageWidget extends StatelessWidget {
+  final String source;
+  final Future<Uint8List> Function(String) loadAssetContent;
+  final Widget Function()? errorWidget;
+
+  const NewImageWidget({
+    Key? key,
+    required this.source,
+    required this.loadAssetContent,
+    this.errorWidget,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    try {
+      return FutureBuilder<Uint8List>(
+        future: loadAssetContent(source),
+        builder: (context, snapshot) {
+          // Show loading indicator while waiting for data
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: SizedBox(
+                width: 150,
+                height: 150,
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          // Handle error state
+          if (snapshot.hasError) {
+            return errorWidget?.call() ?? const SizedBox.shrink();
+          }
+
+        
+
+
+
+          try {
+           
+
+            // Use Image widget with MemoryImage provider
+            return Image(
+              image: MemoryImage(snapshot.data!),
+              height: 150,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return errorWidget?.call() ?? const SizedBox.shrink();
+              },
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                // Add fade-in animation when image loads
+                if (wasSynchronouslyLoaded) {
+                  return child;
+                }
+                return AnimatedOpacity(
+                  opacity: frame != null ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  child: child,
+                );
+              },
+            );
+          } catch (e) {
+            // Handle base64 decode error
+            return errorWidget?.call() ?? const SizedBox.shrink();
+          }
         },
       );
     } catch (e) {
-      return const Icon(Icons.broken_image, size: 150);
+      return errorWidget?.call() ?? const SizedBox.shrink();
     }
   }
 }
