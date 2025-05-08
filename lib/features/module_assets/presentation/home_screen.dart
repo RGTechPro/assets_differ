@@ -1,8 +1,7 @@
 import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/config/app_routes.dart';
-import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
+import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/get_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,9 @@ class HomeScreenController extends GetxController {
     try {
       // Create a temporary dependency provider just to clear assets
       final tempProvider = ModuleAssetsDependencyProvider(
-        platformInfo: PlatformInfo(version: currentVersion.value),
+        assetsConfig: ModuleAssetsConfig(
+          curentAssetVersion: currentVersion.value,
+        ),
       );
 
       await tempProvider.provideDummyDataRepository().clearAllLocalAssets();
@@ -102,15 +103,15 @@ class HomeScreen extends GetView<HomeScreenController> {
                 onPressed: () {
                   // Create dependency provider with current selected version when navigating
                   final dependencyProvider = ModuleAssetsDependencyProvider(
-                    platformInfo: PlatformInfo(
-                      version: controller.currentVersion.value,
+                    assetsConfig: ModuleAssetsConfig(
+                      curentAssetVersion: controller.currentVersion.value,
                     ),
                   );
 
                   // Use named route navigation
                   Navigator.pushNamed(
-                    context, 
-                    AppRoutes.splash, 
+                    context,
+                    AppRoutes.splash,
                     arguments: dependencyProvider,
                   );
                 },
@@ -207,7 +208,7 @@ class _SplashScreenState extends State<SplashScreen> {
 /// Main screen displaying all assets (P0, P1, and P2) in a single view
 class P0AssetsScreen extends StatefulWidget {
   final AssetsController assetsController;
-  final BaseAssetRepository repository;
+  final DummyDataRepository repository;
 
   P0AssetsScreen({
     Key? key,

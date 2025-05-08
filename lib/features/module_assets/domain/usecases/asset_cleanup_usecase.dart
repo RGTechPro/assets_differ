@@ -1,12 +1,11 @@
+import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
-import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
-import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/manifest_compare_usecase.dart';
 
 /// UseCase for cleaning up and deleting assets
 class AssetCleanupUseCase {
-  final BaseAssetRepository _repository;
+  final DummyDataRepository _repository;
   final _logger = AssetLogger('AssetCleanupUseCase');
 
   AssetCleanupUseCase(this._repository);

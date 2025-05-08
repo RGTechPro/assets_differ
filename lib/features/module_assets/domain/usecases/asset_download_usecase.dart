@@ -1,10 +1,10 @@
+import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
-import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
 
 /// UseCase for downloading and saving assets
 class AssetDownloadUseCase {
-  final BaseAssetRepository _repository;
+  final DummyDataRepository _repository;
   final _logger = AssetLogger('AssetDownloadUseCase');
 
   AssetDownloadUseCase(this._repository);
@@ -39,12 +39,14 @@ class AssetDownloadUseCase {
   /// Process prioritized assets in background
   /// Downloads P1 and P2 assets and updates the manifest
   Future<void> processBackgroundAssets({
+     List<AssetItem> p0Assets = const [],
     required List<AssetItem> p1Assets,
     required List<AssetItem> p2Assets,
     required AssetManifest remoteManifest,
   }) async {
     try {
-      // Process P1 and P2 assets in order
+      // Process P0, P1 and P2 assets in order
+      await saveAssetsToLocalStorage(p0Assets);
       await saveAssetsToLocalStorage(p1Assets);
       await saveAssetsToLocalStorage(p2Assets);
 

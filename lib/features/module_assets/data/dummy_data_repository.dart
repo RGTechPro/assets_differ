@@ -4,11 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/data/sources/local_asset_data_source.dart';
 import 'package:assets_differ/features/module_assets/data/sources/remote_asset_data_source.dart';
-import '../domain/repository/repository_interface.dart';
 
 /// Repository for serving static dummy data for testing
 /// This class delegates operations to the appropriate data source
-class DummyDataRepository implements BaseAssetRepository {
+class DummyDataRepository {
   final LocalAssetDataSource _localDataSource;
   final RemoteAssetDataSource _remoteDataSource;
 
@@ -19,32 +18,26 @@ class DummyDataRepository implements BaseAssetRepository {
   })  : _localDataSource = localDataSource ?? LocalAssetDataSource(),
         _remoteDataSource = remoteDataSource ?? RemoteAssetDataSource();
 
-  @override
   Future<AssetManifest> getRemoteManifest(String version) async {
     return await _remoteDataSource.getRemoteManifest(version);
   }
 
-  @override
   Future<AssetManifest?> getLocalManifest() async {
     return await _localDataSource.getLocalManifest();
   }
 
-  @override
   Future<void> setLocalManifest(AssetManifest manifest) async {
     await _localDataSource.setLocalManifest(manifest);
   }
 
-  @override
   Future<void> deleteAssetByPath(String path) async {
     await _localDataSource.deleteAssetByPath(path);
   }
 
-  @override
   Future<String> getAssetByPath(String path) async {
     return await _localDataSource.getAssetByPath(path);
   }
 
-  @override
   Future<String> baseLocalAssetPath() async {
     return await _localDataSource.baseLocalAssetPath();
   }
@@ -72,8 +65,6 @@ class DummyDataRepository implements BaseAssetRepository {
     }
   }
 
-  @override
-
   /// Download and save a single asset based on its type
   Future<ImageUploadResponse> downloadAndSaveAsset(AssetItem asset) async {
     // Download the image data as bytes
@@ -90,4 +81,14 @@ class DummyDataRepository implements BaseAssetRepository {
       isSuccess: true,
     );
   }
+}
+
+class ImageUploadResponse {
+  final int imageBytesLength;
+  final bool isSuccess;
+
+  ImageUploadResponse({
+    required this.imageBytesLength,
+    required this.isSuccess,
+  });
 }

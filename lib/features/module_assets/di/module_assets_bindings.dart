@@ -1,3 +1,5 @@
+import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
+
 import '../data/dummy_data_repository.dart';
 import '../domain/usecases/get_dummy_assets_usecase.dart';
 import '../domain/usecases/manifest_compare_usecase.dart';
@@ -5,11 +7,17 @@ import '../domain/usecases/asset_download_usecase.dart';
 import '../domain/usecases/asset_cleanup_usecase.dart';
 import '../domain/usecases/generate_dummy_assets_usecase.dart';
 
+class ModuleAssetsConfig {
+  final String curentAssetVersion;
+
+  ModuleAssetsConfig({
+    required this.curentAssetVersion,
+  });
+}
+
 /// Dependency provider for the module assets feature
 class ModuleAssetsDependencyProvider {
-
   DummyDataRepository? _dummyDataRepository;
-  // BaseAssetRepository? _baseAssetRepository;
 
   // Use cases
   ManifestCompareUseCase? _manifestCompareUseCase;
@@ -18,63 +26,59 @@ class ModuleAssetsDependencyProvider {
   GenerateDummyAssetsUseCase? _generateDummyAssetsUseCase;
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
 
-  // Platform info
-  PlatformInfo _platformInfo;
+  ModuleAssetsConfig _assetsConfig;
+
+  VersionCompareUseCase? _versionCompareUseCase;
 
   // Constructor with platform info
   ModuleAssetsDependencyProvider({
-    required PlatformInfo platformInfo,
-  }) : _platformInfo = platformInfo;
-  
-  /// Update platform info when version changes
-  void updatePlatformInfo(PlatformInfo newPlatformInfo) {
-    if (_platformInfo.version != newPlatformInfo.version) {
-      _platformInfo = newPlatformInfo;
-    }
-  }
-  
-  /// Get the current platform info
-  PlatformInfo get platformInfo => _platformInfo;
+    required ModuleAssetsConfig assetsConfig,
+  }) : _assetsConfig = assetsConfig;
 
   // Provide dummy data repository
   DummyDataRepository provideDummyDataRepository() {
-    _dummyDataRepository ??= DummyDataRepository();
-    return _dummyDataRepository!;
+    return _dummyDataRepository ??= DummyDataRepository();
   }
 
   // Provide manifest compare use case
   ManifestCompareUseCase provideManifestCompareUseCase() {
-    _manifestCompareUseCase ??= ManifestCompareUseCase();
-    return _manifestCompareUseCase!;
+    return _manifestCompareUseCase ??= ManifestCompareUseCase();
   }
 
   // Provide asset download use case
   AssetDownloadUseCase provideAssetDownloadUseCase() {
-    _assetDownloadUseCase ??= AssetDownloadUseCase(provideDummyDataRepository());
-    return _assetDownloadUseCase!;
+    return _assetDownloadUseCase ??=
+        AssetDownloadUseCase(provideDummyDataRepository());
   }
 
   // Provide asset cleanup use case
   AssetCleanupUseCase provideAssetCleanupUseCase() {
-    _assetCleanupUseCase ??= AssetCleanupUseCase(provideDummyDataRepository());
-    return _assetCleanupUseCase!;
+    return _assetCleanupUseCase ??=
+        AssetCleanupUseCase(provideDummyDataRepository());
   }
 
   // Provide generate dummy assets use case
   GenerateDummyAssetsUseCase provideGenerateDummyAssetsUseCase() {
-    _generateDummyAssetsUseCase ??= GenerateDummyAssetsUseCase(provideDummyDataRepository());
-    return _generateDummyAssetsUseCase!;
+    return _generateDummyAssetsUseCase ??=
+        GenerateDummyAssetsUseCase(provideDummyDataRepository());
+  }
+
+  VersionCompareUseCase provideVersionCompareUseCase() {
+    return _versionCompareUseCase ??= VersionCompareUseCase(
+      _assetsConfig.curentAssetVersion,
+    );
   }
 
   // Provide get dummy assets use case
   GetDummyAssetsUseCase provideGetDummyAssetsUseCase() {
     _getDummyAssetsUseCase ??= GetDummyAssetsUseCase(
       repository: provideDummyDataRepository(),
-      platformInfo: _platformInfo,
       manifestCompareUseCase: provideManifestCompareUseCase(),
       assetDownloadUseCase: provideAssetDownloadUseCase(),
       assetCleanupUseCase: provideAssetCleanupUseCase(),
       generateDummyAssetsUseCase: provideGenerateDummyAssetsUseCase(),
+      versionCompareUseCase: provideVersionCompareUseCase(),
+      currentVersion: _assetsConfig.curentAssetVersion,
     );
     return _getDummyAssetsUseCase!;
   }

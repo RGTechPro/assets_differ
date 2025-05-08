@@ -1,11 +1,11 @@
+import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
-import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
 
 /// UseCase for generating DummyAssets objects from asset manifests
 class GenerateDummyAssetsUseCase {
-  final BaseAssetRepository _repository;
+  final DummyDataRepository _repository;
   final _logger = AssetLogger('GenerateDummyAssetsUseCase');
 
   GenerateDummyAssetsUseCase(this._repository);
