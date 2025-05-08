@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/data/sources/local_asset_data_source.dart';
 import 'package:assets_differ/features/module_assets/data/sources/remote_asset_data_source.dart';
@@ -35,7 +36,12 @@ class DummyDataRepository {
   }
 
   Future<String> getAssetByPath(String path) async {
-    return await _localDataSource.getAssetByPath(path);
+    PerformanceTracker.startTracking('DummyDataRepository.getAssetByPath');
+    try {
+      return await _localDataSource.getAssetByPath(path);
+    } finally {
+      PerformanceTracker.endTracking('DummyDataRepository.getAssetByPath');
+    }
   }
 
   Future<String> baseLocalAssetPath() async {
@@ -67,19 +73,30 @@ class DummyDataRepository {
 
   /// Download and save a single asset based on its type
   Future<ImageUploadResponse> downloadAndSaveAsset(AssetItem asset) async {
-    // Download the image data as bytes
-    final Uint8List imageBytes =
-        await _remoteDataSource.loadImageFromUrl(asset.url);
-
-    // Convert bytes to base64 string for storage
-    final String base64Image = base64Encode(imageBytes);
-
-    // Save the image data to local storage
-    await _localDataSource.saveAssetByPath(asset.path, base64Image);
-    return ImageUploadResponse(
-      imageBytesLength: imageBytes.length,
-      isSuccess: true,
-    );
+    PerformanceTracker.startTracking('DummyDataRepository.downloadAndSaveAsset');
+    
+    try {
+      // Download the image data as bytes
+      PerformanceTracker.startTracking('RemoteDataSource.loadImageFromUrl');
+      final Uint8List imageBytes =
+          await _remoteDataSource.loadImageFromUrl(asset.url);
+      PerformanceTracker.endTracking('RemoteDataSource.loadImageFromUrl');
+      
+      // Convert bytes to base64 string for storage
+      PerformanceTracker.startTracking('Base64Encode');
+      final String base64Image = base64Encode(imageBytes);
+      PerformanceTracker.endTracking('Base64Encode');
+      
+      // Save the image data to local storage
+      await _localDataSource.saveAssetByPath(asset.path, base64Image);
+      
+      return ImageUploadResponse(
+        imageBytesLength: imageBytes.length,
+        isSuccess: true,
+      );
+    } finally {
+      PerformanceTracker.endTracking('DummyDataRepository.downloadAndSaveAsset');
+    }
   }
 }
 

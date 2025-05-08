@@ -1,3 +1,4 @@
+import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:get/get.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
@@ -47,62 +48,90 @@ class GetDummyAssetsUseCase {
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<DummyAssets> execute() async {
+    // Start tracking the entire execution
+    PerformanceTracker.startTracking('GetDummyAssetsUseCase.execute');
+    
     try {
       // First, load local manifest to get the current version
+      PerformanceTracker.startTracking('getLocalManifest');
       final AssetManifest? localManifest = await _repository.getLocalManifest();
+      PerformanceTracker.endTracking('getLocalManifest');
 
       if (localManifest == null) {
         // If no local manifest exists, we need to get everything from remote
-        return _handleMajorVersionChange();
+        final result = await _handleMajorVersionChange();
+        PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
+        return result;
       }
 
       // Check version differences using the dedicated usecase
+      PerformanceTracker.startTracking('compareVersions');
       final VersionChange versionChange =
           _versionCompareUseCase.compareVersions(
         localManifest.version,
       );
+      PerformanceTracker.endTracking('compareVersions');
 
       if (versionChange == VersionChange.major) {
         // For major version changes, use current implementation
-        return _handleMajorVersionChange();
+        final result = await _handleMajorVersionChange();
+        PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
+        return result;
       } else {
         // For minor/patch changes, use local manifest and update in background
-        return _handleMinorPatchChange(localManifest);
+        final result = await _handleMinorPatchChange(localManifest);
+        PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
+        return result;
       }
     } catch (e, stackTrace) {
       _logger.error('Failed to execute GetDummyAssetsUseCase', e, stackTrace);
+      PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
       rethrow;
     }
   }
 
   /// Handle major version changes with immediate asset updates
   Future<DummyAssets> _handleMajorVersionChange() async {
+    PerformanceTracker.startTracking('_handleMajorVersionChange');
+    
     // Use the repository to fetch remote data using the current version
+    PerformanceTracker.startTracking('getRemoteManifest');
     final AssetManifest remoteManifest = await _repository.getRemoteManifest(
      _currentVersion,
     );
+    PerformanceTracker.endTracking('getRemoteManifest');
 
     // Get local manifest for comparison
+    PerformanceTracker.startTracking('getLocalManifest_majorChange');
     final AssetManifest? localManifest = await _repository.getLocalManifest();
+    PerformanceTracker.endTracking('getLocalManifest_majorChange');
 
     // Analyze the differences between local and remote manifests
+    PerformanceTracker.startTracking('compareManifests');
     final ManifestDifference diff =
         _manifestCompareUseCase.compareManifests(localManifest, remoteManifest);
+    PerformanceTracker.endTracking('compareManifests');
 
     // P0 assets need to be processed immediately
+    PerformanceTracker.startTracking('saveP0AssetsToLocalStorage');
     await _assetDownloadUseCase
         .saveAssetsToLocalStorage(diff.priorityAssets.p0);
+    PerformanceTracker.endTracking('saveP0AssetsToLocalStorage');
 
     // Generate the initial assets map with P0 assets
+    PerformanceTracker.startTracking('generateDummyAssets_P0Only');
     final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
       remoteManifest,
       0,
     );
+    PerformanceTracker.endTracking('generateDummyAssets_P0Only');
+    
     _dummyAssets.value = dummyAssets;
 
     // Process remaining assets in the background
     _updateAssetsInBackground(diff, remoteManifest);
 
+    PerformanceTracker.endTracking('_handleMajorVersionChange');
     return dummyAssets;
   }
 
@@ -110,16 +139,22 @@ class GetDummyAssetsUseCase {
   Future<DummyAssets> _handleMinorPatchChange(
     AssetManifest localManifest,
   ) async {
+    PerformanceTracker.startTracking('_handleMinorPatchChange');
+    
     // Generate assets using only local manifest
+    PerformanceTracker.startTracking('generateDummyAssets_local');
     final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
       localManifest,
       null,
     );
+    PerformanceTracker.endTracking('generateDummyAssets_local');
+    
     _dummyAssets.value = dummyAssets;
 
     // Start remote manifest update in background
     _updateRemoteAssetsInBackground(localManifest);
 
+    PerformanceTracker.endTracking('_handleMinorPatchChange');
     return dummyAssets;
   }
 
@@ -128,55 +163,79 @@ class GetDummyAssetsUseCase {
     ManifestDifference diff,
     AssetManifest remoteManifest,
   ) async {
+    PerformanceTracker.startTracking('_updateAssetsInBackground');
+    
     try {
       // Process lower priority assets in the background
+      PerformanceTracker.startTracking('processBackgroundAssets');
       await _assetDownloadUseCase.processBackgroundAssets(
         p1Assets: diff.priorityAssets.p1,
         p2Assets: diff.priorityAssets.p2,
         remoteManifest: remoteManifest,
       );
+      PerformanceTracker.endTracking('processBackgroundAssets');
 
       // Clean up removed assets
+      PerformanceTracker.startTracking('cleanupBasedOnDiff');
       await _assetCleanupUseCase.cleanupBasedOnDiff(diff);
+      PerformanceTracker.endTracking('cleanupBasedOnDiff');
 
       // Update the asset map with all priorities
+      PerformanceTracker.startTracking('generateDummyAssets_allPriorities');
       final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
           remoteManifest, null);
+      PerformanceTracker.endTracking('generateDummyAssets_allPriorities');
+      
       _dummyAssets.value = dummyAssets;
 
       _logger.info('Background asset update complete');
     } catch (e, stackTrace) {
       _logger.error('Error in background asset update', e, stackTrace);
     }
+    
+    PerformanceTracker.endTracking('_updateAssetsInBackground');
   }
 
   /// Update assets from remote in background for minor/patch changes
   Future<void> _updateRemoteAssetsInBackground(
       AssetManifest localManifest) async {
+    PerformanceTracker.startTracking('_updateRemoteAssetsInBackground');
+    
     try {
       // Fetch remote manifest in background
+      PerformanceTracker.startTracking('getRemoteManifest_background');
       final AssetManifest remoteManifest =
           await _repository.getRemoteManifest(_currentVersion);
+      PerformanceTracker.endTracking('getRemoteManifest_background');
 
       // Compare manifests
+      PerformanceTracker.startTracking('compareManifests_background');
       final ManifestDifference diff = _manifestCompareUseCase.compareManifests(
           localManifest, remoteManifest);
+      PerformanceTracker.endTracking('compareManifests_background');
 
       // Process all assets in background
+      PerformanceTracker.startTracking('processAllBackgroundAssets');
       await _assetDownloadUseCase.processBackgroundAssets(
         p0Assets: diff.priorityAssets.p0,
         p1Assets: diff.priorityAssets.p1,
         p2Assets: diff.priorityAssets.p2,
         remoteManifest: remoteManifest,
       );
+      PerformanceTracker.endTracking('processAllBackgroundAssets');
 
       // Clean up any removed assets
+      PerformanceTracker.startTracking('cleanupBasedOnDiff_background');
       await _assetCleanupUseCase.cleanupBasedOnDiff(diff);
+      PerformanceTracker.endTracking('cleanupBasedOnDiff_background');
 
       // Update asset map if needed
       if (diff.hasChanges) {
+        PerformanceTracker.startTracking('generateDummyAssets_afterUpdate');
         final dummyAssets = await _generateDummyAssetsUseCase
             .generateDummyAssets(remoteManifest, null);
+        PerformanceTracker.endTracking('generateDummyAssets_afterUpdate');
+        
         _dummyAssets.value = dummyAssets;
       }
 
@@ -185,5 +244,7 @@ class GetDummyAssetsUseCase {
     } catch (e, stackTrace) {
       _logger.error('Error in background remote asset update', e, stackTrace);
     }
+    
+    PerformanceTracker.endTracking('_updateRemoteAssetsInBackground');
   }
 }

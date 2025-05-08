@@ -4,6 +4,7 @@ import 'package:assets_differ/features/module_assets/data/dummy_data_repository.
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
+import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
@@ -171,14 +172,42 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    widget.dependencyProvider.provideGetDummyAssetsUseCase().execute().then(
-          (value) => Navigator.pushReplacementNamed(
+    super.initState();
+    
+    // Start tracking the total time from splash screen to P0 assets screen
+    PerformanceTracker.startTracking('SplashToP0Screen_TotalTime');
+    
+    _loadAssetsAndNavigate();
+  }
+  
+  Future<void> _loadAssetsAndNavigate() async {
+    try {
+      // Start tracking the GetDummyAssetsUseCase execution initiated from splash screen
+      PerformanceTracker.startTracking('SplashScreen_ExecuteUseCase');
+      
+      // Execute the use case with performance tracking
+      widget.dependencyProvider.provideGetDummyAssetsUseCase().execute().then(
+        (value) {
+          PerformanceTracker.endTracking('SplashScreen_ExecuteUseCase');
+          
+          // Log a summary of the performance after the use case completes
+          PerformanceTracker.logSummary();
+          
+          // Start tracking navigation time
+          PerformanceTracker.startTracking('Navigate_ToP0Screen');
+          
+          // Use your preferred navigation approach
+          Navigator.pushReplacementNamed(
             context,
             AppRoutes.assets,
             arguments: widget.dependencyProvider,
-          ),
-        );
-    super.initState();
+          );
+        },
+      );
+    } catch (e) {
+      print('Error loading assets: $e');
+      // Show error UI if needed
+    }
   }
 
   @override
