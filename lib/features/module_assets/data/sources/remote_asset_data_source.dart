@@ -63,7 +63,7 @@ class RemoteAssetDataSource {
     "assets": [
       {
         "path": "assets/logo.png",
-        "hash": "abc1235ef",
+        "hash": "abc1235efj",
         "url": "https://picsum.photos/id/1012/300/200",
         "priority": 0
       },

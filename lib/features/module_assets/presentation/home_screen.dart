@@ -1,4 +1,5 @@
 import 'package:assets_differ/core/config/asset_config.dart';
+import 'package:assets_differ/core/config/app_routes.dart';
 import 'package:assets_differ/features/module_assets/domain/repository/repository_interface.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/get_dummy_assets_usecase.dart';
@@ -61,7 +62,9 @@ class HomeScreen extends GetView<HomeScreenController> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: VersionSelector(onVersionChanged: controller.onVersionChanged),
+            child: VersionSelector(
+              onVersionChanged: controller.onVersionChanged,
+            ),
           ),
           Expanded(
             child: _buildModuleList(context),
@@ -99,13 +102,16 @@ class HomeScreen extends GetView<HomeScreenController> {
                 onPressed: () {
                   // Create dependency provider with current selected version when navigating
                   final dependencyProvider = ModuleAssetsDependencyProvider(
-                    platformInfo: PlatformInfo(version: controller.currentVersion.value),
+                    platformInfo: PlatformInfo(
+                      version: controller.currentVersion.value,
+                    ),
                   );
 
-                  Get.to(
-                    () => SplashScreen(
-                      dependencyProvider: dependencyProvider,
-                    ),
+                  // Use named route navigation
+                  Navigator.pushNamed(
+                    context, 
+                    AppRoutes.splash, 
+                    arguments: dependencyProvider,
                   );
                 },
                 child: const Text("Demo")),
@@ -165,10 +171,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     widget.dependencyProvider.provideGetDummyAssetsUseCase().execute().then(
-          (value) => Get.off(
-            () => P0AssetsScreen(
-              dependencyProvider: widget.dependencyProvider,
-            ),
+          (value) => Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.assets,
+            arguments: widget.dependencyProvider,
           ),
         );
     super.initState();
