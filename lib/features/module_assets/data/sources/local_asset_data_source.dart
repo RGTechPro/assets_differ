@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:assets_differ/core/services/file_storage_service.dart';
+import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -51,6 +52,7 @@ class LocalAssetDataSource {
 
   /// Deletes an asset at the specified path
   Future<bool> deleteAssetByPath(String path) async {
+    PerformanceTracker.startTracking('LocalAssetDataSource.deleteAssetByPath');
     try {
       final result = await FileStorageService.instance.deleteAssetByPath(path);
       if (result) {
@@ -62,11 +64,14 @@ class LocalAssetDataSource {
     } catch (e) {
       print('Error deleting asset: $e');
       return false;
+    } finally {
+      PerformanceTracker.endTracking('LocalAssetDataSource.deleteAssetByPath');
     }
   }
 
   /// Retrieves an asset at the specified path
   Future<Uint8List> getAssetByPath(String path) async {
+    PerformanceTracker.startTracking('LocalAssetDataSource.getAssetByPath');
     try {
       final data = await FileStorageService.instance.getAssetByPath(path);
 
@@ -82,18 +87,24 @@ class LocalAssetDataSource {
         throw Exception('Asset not found: $path');
       }
     } catch (e) {
-      return Uint8List(0); // Return empty bytes on error
+      print('Error retrieving asset: $e');
+       return Uint8List(0); // Return empty bytes on error
+    } finally {
+      PerformanceTracker.endTracking('LocalAssetDataSource.getAssetByPath');
     }
   }
 
   /// Saves an asset at the specified path
   Future<void> saveAssetByPath(String path, String data) async {
+    PerformanceTracker.startTracking('LocalAssetDataSource.saveAssetByPath');
     try {
       await FileStorageService.instance.saveAssetByPath(path, data);
       print('Asset saved successfully: $path');
       print('Data size: ${data.length} bytes');
     } catch (e) {
       print('Error saving asset: $e');
+    } finally {
+      PerformanceTracker.endTracking('LocalAssetDataSource.saveAssetByPath');
     }
   }
 
