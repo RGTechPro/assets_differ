@@ -1,4 +1,7 @@
+import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/download_asset_usecase.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
 
 import '../data/dummy_data_repository.dart';
 import '../domain/usecases/get_dummy_assets_usecase.dart';
@@ -25,10 +28,11 @@ class ModuleAssetsDependencyProvider {
   AssetCleanupUseCase? _assetCleanupUseCase;
   GenerateDummyAssetsUseCase? _generateDummyAssetsUseCase;
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
+  DownloadAssetUseCase? _downloadAssetUseCase;
+  VersionCompareUseCase? _versionCompareUseCase;
+  SaveUint8ListImageUseCase? _saveUint8ListImageUseCase;
 
   final ModuleAssetsConfig _assetsConfig;
-
-  VersionCompareUseCase? _versionCompareUseCase;
 
   // Constructor with platform info
   ModuleAssetsDependencyProvider({
@@ -63,6 +67,14 @@ class ModuleAssetsDependencyProvider {
         GenerateDummyAssetsUseCase(provideDummyDataRepository());
   }
 
+  // Provide download asset use case
+  DownloadAssetUseCase provideDownloadAssetUseCase() {
+    return _downloadAssetUseCase ??= DownloadAssetUseCase(
+      provideDummyDataRepository(),
+    );
+  }
+
+  // Provide version compare use case
   VersionCompareUseCase provideVersionCompareUseCase() {
     return _versionCompareUseCase ??= VersionCompareUseCase(
       _assetsConfig.curentAssetVersion,
@@ -78,9 +90,19 @@ class ModuleAssetsDependencyProvider {
       assetCleanupUseCase: provideAssetCleanupUseCase(),
       generateDummyAssetsUseCase: provideGenerateDummyAssetsUseCase(),
       versionCompareUseCase: provideVersionCompareUseCase(),
+      ensureZeroPixelImageExistsUseCase: EnsureZeroPixelImageExistsUseCase(
+        repository: provideDummyDataRepository(),
+        saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
+      ),
       currentVersion: _assetsConfig.curentAssetVersion,
     );
     return _getDummyAssetsUseCase!;
+  }
+
+  // Provide save Uint8List image use case
+  SaveUint8ListImageUseCase provideSaveUint8ListImageUseCase() {
+    return _saveUint8ListImageUseCase ??=
+        SaveUint8ListImageUseCase(provideDummyDataRepository());
   }
 
   // Dispose all dependencies
@@ -91,5 +113,8 @@ class ModuleAssetsDependencyProvider {
     _assetCleanupUseCase = null;
     _generateDummyAssetsUseCase = null;
     _getDummyAssetsUseCase = null;
+    _downloadAssetUseCase = null;
+    _versionCompareUseCase = null;
+    _saveUint8ListImageUseCase = null;
   }
 }

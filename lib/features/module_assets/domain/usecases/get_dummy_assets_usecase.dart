@@ -1,5 +1,7 @@
 import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 import 'package:get/get.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
@@ -8,6 +10,7 @@ import 'package:assets_differ/features/module_assets/domain/usecases/asset_downl
 import 'package:assets_differ/features/module_assets/domain/usecases/asset_cleanup_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
+import 'package:assets_differ/core/logging.dart';
 
 /// Coordinator UseCase to provide and manage DummyAssets
 /// Delegates specific tasks to specialized usecases
@@ -18,6 +21,7 @@ class GetDummyAssetsUseCase {
   final AssetCleanupUseCase _assetCleanupUseCase;
   final GenerateDummyAssetsUseCase _generateDummyAssetsUseCase;
   final VersionCompareUseCase _versionCompareUseCase;
+  final EnsureZeroPixelImageExistsUseCase _ensureZeroPixelImageExistsUseCase;
   final String _currentVersion;
   final _logger = AssetLogger('GetDummyAssetsUseCase');
 
@@ -35,19 +39,24 @@ class GetDummyAssetsUseCase {
     required AssetCleanupUseCase assetCleanupUseCase,
     required GenerateDummyAssetsUseCase generateDummyAssetsUseCase,
     required VersionCompareUseCase versionCompareUseCase,
-   required String currentVersion, 
+    required EnsureZeroPixelImageExistsUseCase ensureZeroPixelImageExistsUseCase,
+    required String currentVersion, 
   })  : _currentVersion = currentVersion, _repository = repository,
         _manifestCompareUseCase = manifestCompareUseCase,
         _assetDownloadUseCase = assetDownloadUseCase,
         _assetCleanupUseCase = assetCleanupUseCase,
         _generateDummyAssetsUseCase = generateDummyAssetsUseCase,
-        _versionCompareUseCase = versionCompareUseCase;
+        _versionCompareUseCase = versionCompareUseCase,
+        _ensureZeroPixelImageExistsUseCase = ensureZeroPixelImageExistsUseCase;
 
   /// The current DummyAssets as an observable
   Rx<DummyAssets> get dummyAssets => _dummyAssets;
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<DummyAssets> execute() async {
+    // First ensure that the zero pixel placeholder image exists
+    await _ensureZeroPixelImageExistsUseCase.execute();
+    
     // Start tracking the entire execution
     PerformanceTracker.startTracking('GetDummyAssetsUseCase.execute');
     
@@ -77,7 +86,15 @@ class GetDummyAssetsUseCase {
         final result = await _handleMajorVersionChange();
         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
         return result;
-      } else {
+      } else if(versionChange == VersionChange.none){
+        // For major version changes, use current implementation
+        final result = _handleNoVersionChange(localManifest);
+         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
+        return result;
+      }
+      
+      
+      else {
         // For minor/patch changes, use local manifest and update in background
         final result = await _handleMinorPatchChange(localManifest);
         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
@@ -155,6 +172,26 @@ class GetDummyAssetsUseCase {
     _updateRemoteAssetsInBackground(localManifest);
 
     PerformanceTracker.endTracking('_handleMinorPatchChange');
+    return dummyAssets;
+  }
+
+    /// Handle no version changes using local manifest first
+  Future<DummyAssets> _handleNoVersionChange(
+    AssetManifest localManifest,
+  ) async {
+    PerformanceTracker.startTracking('_handleNoVersionChange');
+    
+    // Generate assets using only local manifest
+    PerformanceTracker.startTracking('generateDummyAssets_local');
+    final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
+      localManifest,
+      null,
+    );
+    PerformanceTracker.endTracking('generateDummyAssets_local');
+    
+    _dummyAssets.value = dummyAssets;
+
+    PerformanceTracker.endTracking('_handleNoVersionChange');
     return dummyAssets;
   }
 

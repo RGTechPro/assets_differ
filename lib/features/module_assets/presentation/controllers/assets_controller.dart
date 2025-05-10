@@ -4,7 +4,7 @@ import 'package:assets_differ/features/module_assets/presentation/home_screen.da
 import 'package:get/get.dart';
 import '../../domain/usecases/get_dummy_assets_usecase.dart';
 
-const String kZeroPixel = 'assets/images/zero_pixel.png';
+const String kZeroPixel = 'assets/zero_pixel.png';
 
 class DummyAssets {
   final String logoImage;

@@ -35,7 +35,7 @@ class DummyDataRepository {
     await _localDataSource.deleteAssetByPath(path);
   }
 
-  Future<Uint8List> getAssetByPath(String path) async {
+  Future<Uint8List?> getAssetByPath(String path) async {
     PerformanceTracker.startTracking('DummyDataRepository.getAssetByPath');
     try {
       return await _localDataSource.getAssetByPath(path);
@@ -53,31 +53,34 @@ class DummyDataRepository {
     await _localDataSource.clearManifest();
   }
 
-  /// Download and save a single asset based on its type
-  Future<ImageUploadResponse> downloadAndSaveAsset(AssetItem asset) async {
-    PerformanceTracker.startTracking('DummyDataRepository.downloadAndSaveAsset');
-    
+  /// Load image data from a URL
+  Future<Uint8List> loadImageFromUrl(String url) async {
+    PerformanceTracker.startTracking('DummyDataRepository.loadImageFromUrl');
     try {
-      // Download the image data as bytes
-      PerformanceTracker.startTracking('RemoteDataSource.loadImageFromUrl');
-      final Uint8List imageBytes =
-          await _remoteDataSource.loadImageFromUrl(asset.url);
-      PerformanceTracker.endTracking('RemoteDataSource.loadImageFromUrl');
-      
-      // Convert bytes to base64 string for storage
-      PerformanceTracker.startTracking('Base64Encode');
-      final String base64Image = base64Encode(imageBytes);
-      PerformanceTracker.endTracking('Base64Encode');
-      
-      // Save the image data to local storage
-      await _localDataSource.saveAssetByPath(asset.path, base64Image);
-      
-      return ImageUploadResponse(
-        imageBytesLength: imageBytes.length,
-        isSuccess: true,
-      );
+      return await _remoteDataSource.loadImageFromUrl(url);
     } finally {
-      PerformanceTracker.endTracking('DummyDataRepository.downloadAndSaveAsset');
+      PerformanceTracker.endTracking('DummyDataRepository.loadImageFromUrl');
+    }
+  }
+
+  /// Save asset data by path
+  Future<void> saveAssetByPath(String path, String data) async {
+    PerformanceTracker.startTracking('DummyDataRepository.saveAssetByPath');
+    try {
+      await _localDataSource.saveAssetByPath(path, data);
+    } finally {
+      PerformanceTracker.endTracking('DummyDataRepository.saveAssetByPath');
+    }
+  }
+
+  /// Delete all local data
+  Future<void> deleteAllData() async {
+    PerformanceTracker.startTracking('DummyDataRepository.deleteAllData');
+    try {
+      await _localDataSource.clearManifest();
+      // Add any other data clearing operations here
+    } finally {
+      PerformanceTracker.endTracking('DummyDataRepository.deleteAllData');
     }
   }
 }

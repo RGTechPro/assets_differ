@@ -1,13 +1,20 @@
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/download_asset_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
+
+import 'package:assets_differ/core/logging.dart';
 
 /// UseCase for downloading and saving assets
 class AssetDownloadUseCase {
   final DummyDataRepository _repository;
   final _logger = AssetLogger('AssetDownloadUseCase');
 
-  AssetDownloadUseCase(this._repository);
+  AssetDownloadUseCase(this._repository)
+      : _downloadAssetUseCase = DownloadAssetUseCase(
+          _repository,
+        );
+  final DownloadAssetUseCase _downloadAssetUseCase;
 
   /// Save assets to local storage
   Future<void> saveAssetsToLocalStorage(List<AssetItem> assetList) async {
@@ -26,8 +33,7 @@ class AssetDownloadUseCase {
     try {
       _logger.debug('Downloading image: ${asset.url}');
 
-      ImageUploadResponse response =
-          await _repository.downloadAndSaveAsset(asset);
+      ImageUploadResponse response = await _downloadAssetUseCase.execute(asset);
 
       _logger.debug(
           'Saved image: ${asset.path} (${response.imageBytesLength} bytes)');
@@ -39,7 +45,7 @@ class AssetDownloadUseCase {
   /// Process prioritized assets in background
   /// Downloads P1 and P2 assets and updates the manifest
   Future<void> processBackgroundAssets({
-     List<AssetItem> p0Assets = const [],
+    List<AssetItem> p0Assets = const [],
     required List<AssetItem> p1Assets,
     required List<AssetItem> p2Assets,
     required AssetManifest remoteManifest,

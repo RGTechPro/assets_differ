@@ -1,12 +1,12 @@
 import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/config/app_routes.dart';
+import 'package:assets_differ/core/utils/performance_tracker.dart';
+import 'package:assets_differ/core/widgets/image_providers.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/asset_cleanup_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
-import 'package:flutter/foundation.dart';
-import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
@@ -303,8 +303,6 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
             return ImageCard(
               asset: assetPath,
               title: widget.assetsController.state.p0Section!.title,
-              getAssetByPath: (assetPathN) async =>
-                  widget.repository.getAssetByPath(assetPathN),
             );
           }),
 
@@ -340,8 +338,6 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
               return ImageCard(
                 asset: assetPath,
                 title: widget.assetsController.state.p1Section!.title,
-                getAssetByPath: (assetPathN) async =>
-                    widget.repository.getAssetByPath(assetPathN),
               );
             },
           ),
@@ -378,8 +374,6 @@ class _P0AssetsScreenState extends State<P0AssetsScreen> {
               return ImageCard(
                 asset: assetPath,
                 title: widget.assetsController.state.p2Section!.title,
-                getAssetByPath: (assetPathN) async =>
-                    widget.repository.getAssetByPath(assetPathN),
               );
             },
           ),
@@ -395,20 +389,10 @@ class ImageCard extends StatelessWidget {
     Key? key,
     required this.asset,
     required this.title,
-    required this.getAssetByPath,
   }) : super(key: key);
-
-  final Future<Uint8List> Function(String) getAssetByPath;
 
   final String asset;
   final String title;
-
-  Future<Uint8List> _loadAssetContent(String assetPath) async {
-  
-      // Get the asset content using the repository
-      return await getAssetByPath(assetPath);
-      
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -434,83 +418,57 @@ class ImageCard extends StatelessWidget {
   }
 
   Widget _buildImage(String source) {
-    return NewImageWidget(
-      source: source,
-      loadAssetContent: _loadAssetContent,
+    return Image(
+      image: FileAssetImageProvider(source),
+      height: 150,
+      fit: BoxFit.contain,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return SizedBox(
+          height: 150,
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / 
+                    (loadingProgress.expectedTotalBytes ?? 1)
+                  : null,
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: 150,
+          color: Colors.grey.shade200,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.broken_image, size: 60, color: Colors.red),
+                const SizedBox(height: 8),
+                Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Colors.red.shade700),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        // Add fade-in animation when image loads
+        if (wasSynchronouslyLoaded) {
+          return child;
+        }
+        return AnimatedOpacity(
+          opacity: frame != null ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          child: child,
+        );
+      },
     );
-  }
-}
-
-class NewImageWidget extends StatelessWidget {
-  final String source;
-  final Future<Uint8List> Function(String) loadAssetContent;
-  final Widget Function()? errorWidget;
-
-  const NewImageWidget({
-    Key? key,
-    required this.source,
-    required this.loadAssetContent,
-    this.errorWidget,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    try {
-      return FutureBuilder<Uint8List>(
-        future: loadAssetContent(source),
-        builder: (context, snapshot) {
-          // Show loading indicator while waiting for data
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: SizedBox(
-                width: 150,
-                height: 150,
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          // Handle error state
-          if (snapshot.hasError) {
-            return errorWidget?.call() ?? const SizedBox.shrink();
-          }
-
-        
-
-
-
-          try {
-           
-
-            // Use Image widget with MemoryImage provider
-            return Image(
-              image: MemoryImage(snapshot.data!),
-              height: 150,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return errorWidget?.call() ?? const SizedBox.shrink();
-              },
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                // Add fade-in animation when image loads
-                if (wasSynchronouslyLoaded) {
-                  return child;
-                }
-                return AnimatedOpacity(
-                  opacity: frame != null ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                  child: child,
-                );
-              },
-            );
-          } catch (e) {
-            // Handle base64 decode error
-            return errorWidget?.call() ?? const SizedBox.shrink();
-          }
-        },
-      );
-    } catch (e) {
-      return errorWidget?.call() ?? const SizedBox.shrink();
-    }
   }
 }

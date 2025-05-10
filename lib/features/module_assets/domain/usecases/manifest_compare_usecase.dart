@@ -2,6 +2,8 @@ import 'package:assets_differ/features/module_assets/domain/usecases/generate_du
 import 'package:flutter/foundation.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 
+import 'package:assets_differ/core/logging.dart';
+
 /// UseCase for comparing manifests to determine asset changes
 class ManifestCompareUseCase {
   final _logger = AssetLogger('ManifestCompareUseCase');
