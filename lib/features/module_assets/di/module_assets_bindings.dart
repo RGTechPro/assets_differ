@@ -19,7 +19,10 @@ class ModuleAssetsConfig {
 }
 
 /// Dependency provider for the module assets feature
-class ModuleAssetsDependencyProvider {
+class ModuleAssetsDependencyProvider<T> {
+
+  final AssetMapper<T> assetMapper;
+
   DummyDataRepository? _dummyDataRepository;
 
   // Use cases
@@ -36,6 +39,7 @@ class ModuleAssetsDependencyProvider {
   // Constructor with platform info
   ModuleAssetsDependencyProvider({
     required ModuleAssetsConfig assetsConfig,
+    required this.assetMapper,
   }) : _assetsConfig = assetsConfig;
 
   // Provide dummy data repository
@@ -81,7 +85,7 @@ class ModuleAssetsDependencyProvider {
       manifestCompareUseCase: provideManifestCompareUseCase(),
       assetDownloadUseCase: provideAssetDownloadUseCase(),
       assetCleanupUseCase: provideAssetCleanupUseCase(),
-      assetMapper: const DummyAssetsAssetMapper(),
+      assetMapper: assetMapper,
       versionCompareUseCase: provideVersionCompareUseCase(),
       ensureZeroPixelImageExistsUseCase: EnsureZeroPixelImageExistsUseCase(
         repository: provideDummyDataRepository(),

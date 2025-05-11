@@ -120,6 +120,7 @@ class HomeScreen extends GetView<HomeScreenViewModel> {
                 onPressed: () {
                   // Create dependency provider with current selected version when navigating
                   final dependencyProvider = ModuleAssetsDependencyProvider(
+                    assetMapper: const DummyAssetsMapper(),
                     assetsConfig: ModuleAssetsConfig(
                       curentAssetVersion:
                           controller.state.selectedVersion.value,

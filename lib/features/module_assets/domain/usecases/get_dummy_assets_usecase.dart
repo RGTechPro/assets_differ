@@ -11,7 +11,7 @@ import 'package:assets_differ/core/logging.dart';
 
 /// Coordinator UseCase to provide and manage DummyAssets
 /// Delegates specific tasks to specialized usecases
-class GetDummyAssetsUseCase {
+class GetDummyAssetsUseCase<T> {
   final DummyDataRepository _repository;
   final ManifestCompareUseCase _manifestCompareUseCase;
   final AssetDownloadUseCase _assetDownloadUseCase;
@@ -21,11 +21,11 @@ class GetDummyAssetsUseCase {
   final String _currentVersion;
   final _logger = AssetLogger('GetDummyAssetsUseCase');
 
-  final AssetMapper<DummyAssets> _assetMapper;
+  final AssetMapper<T> _assetMapper;
 
-  DummyAssets get dummyAssets => _dummyAssets!;
+  T get dummyAssets => _dummyAssets!;
 
-  DummyAssets? _dummyAssets;
+  T? _dummyAssets;
 
 
   GetDummyAssetsUseCase({
@@ -33,8 +33,7 @@ class GetDummyAssetsUseCase {
     required ManifestCompareUseCase manifestCompareUseCase,
     required AssetDownloadUseCase assetDownloadUseCase,
     required AssetCleanupUseCase assetCleanupUseCase,
-    required AssetMapper<DummyAssets> assetMapper,
-    // required GenerateDummyAssetsUseCase generateDummyAssetsUseCase,
+    required AssetMapper<T> assetMapper,
     required VersionCompareUseCase versionCompareUseCase,
     required EnsureZeroPixelImageExistsUseCase ensureZeroPixelImageExistsUseCase,
     required String currentVersion, 
@@ -43,15 +42,11 @@ class GetDummyAssetsUseCase {
         _assetDownloadUseCase = assetDownloadUseCase,
         _assetCleanupUseCase = assetCleanupUseCase,
         _assetMapper = assetMapper,
-        // _generateDummyAssetsUseCase = generateDummyAssetsUseCase,
         _versionCompareUseCase = versionCompareUseCase,
         _ensureZeroPixelImageExistsUseCase = ensureZeroPixelImageExistsUseCase;
 
-  // /// The current DummyAssets as an observable
-  // Rx<DummyAssets> get dummyAssets => _dummyAssets;
-
   /// Execute the use case to get DummyAssets as an Observable
-  Future<DummyAssets> execute() async {
+  Future<T> execute() async {
 
     if (_dummyAssets != null) {
       // If assets are already loaded, return them
@@ -114,7 +109,7 @@ class GetDummyAssetsUseCase {
   }
 
   /// Handle major version changes with immediate asset updates
-  Future<DummyAssets> _handleMajorVersionChange() async {
+  Future<T> _handleMajorVersionChange() async {
     PerformanceTracker.startTracking('_handleMajorVersionChange');
     
     // Use the repository to fetch remote data using the current version
@@ -159,7 +154,7 @@ class GetDummyAssetsUseCase {
   }
 
   /// Handle minor or patch version changes using local manifest first
-  Future<DummyAssets> _handleMinorPatchChange(
+  Future<T> _handleMinorPatchChange(
     AssetManifest localManifest,
   ) async {
     PerformanceTracker.startTracking('_handleMinorPatchChange');
@@ -180,7 +175,7 @@ class GetDummyAssetsUseCase {
   }
 
     /// Handle no version changes using local manifest first
-  Future<DummyAssets> _handleNoVersionChange(
+  Future<T> _handleNoVersionChange(
     AssetManifest localManifest,
   ) async {
     PerformanceTracker.startTracking('_handleNoVersionChange');

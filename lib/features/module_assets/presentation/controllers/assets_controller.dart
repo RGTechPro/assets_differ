@@ -20,8 +20,8 @@ abstract class AssetMapper<T> {
   T empty();
 }
 
-class DummyAssetsAssetMapper implements AssetMapper<DummyAssets> {
-  const DummyAssetsAssetMapper();
+class DummyAssetsMapper implements AssetMapper<DummyAssets> {
+  const DummyAssetsMapper();
   @override
   DummyAssets empty() {
     return DummyAssets(
