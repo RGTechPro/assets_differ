@@ -1,3 +1,4 @@
+import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
@@ -27,7 +28,6 @@ class GetDummyAssetsUseCase<T> {
 
   T? _dummyAssets;
 
-
   GetDummyAssetsUseCase({
     required DummyDataRepository repository,
     required ManifestCompareUseCase manifestCompareUseCase,
@@ -35,9 +35,11 @@ class GetDummyAssetsUseCase<T> {
     required AssetCleanupUseCase assetCleanupUseCase,
     required AssetMapper<T> assetMapper,
     required VersionCompareUseCase versionCompareUseCase,
-    required EnsureZeroPixelImageExistsUseCase ensureZeroPixelImageExistsUseCase,
-    required String currentVersion, 
-  })  : _currentVersion = currentVersion, _repository = repository,
+    required EnsureZeroPixelImageExistsUseCase
+        ensureZeroPixelImageExistsUseCase,
+    required String currentVersion,
+  })  : _currentVersion = currentVersion,
+        _repository = repository,
         _manifestCompareUseCase = manifestCompareUseCase,
         _assetDownloadUseCase = assetDownloadUseCase,
         _assetCleanupUseCase = assetCleanupUseCase,
@@ -47,7 +49,6 @@ class GetDummyAssetsUseCase<T> {
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<T> execute() async {
-
     if (_dummyAssets != null) {
       // If assets are already loaded, return them
       return _dummyAssets!;
@@ -57,10 +58,10 @@ class GetDummyAssetsUseCase<T> {
 
     // First ensure that the zero pixel placeholder image exists
     await _ensureZeroPixelImageExistsUseCase.execute();
-    
+
     // Start tracking the entire execution
     PerformanceTracker.startTracking('GetDummyAssetsUseCase.execute');
-    
+
     try {
       // First, load local manifest to get the current version
       PerformanceTracker.startTracking('getLocalManifest');
@@ -87,15 +88,12 @@ class GetDummyAssetsUseCase<T> {
         final result = await _handleMajorVersionChange();
         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
         return result;
-      } else if(versionChange == VersionChange.none){
+      } else if (versionChange == VersionChange.none) {
         // For major version changes, use current implementation
         final result = _handleNoVersionChange(localManifest);
-         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
+        PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
         return result;
-      }
-      
-      
-      else {
+      } else {
         // For minor/patch changes, use local manifest and update in background
         final result = await _handleMinorPatchChange(localManifest);
         PerformanceTracker.endTracking('GetDummyAssetsUseCase.execute');
@@ -111,11 +109,11 @@ class GetDummyAssetsUseCase<T> {
   /// Handle major version changes with immediate asset updates
   Future<T> _handleMajorVersionChange() async {
     PerformanceTracker.startTracking('_handleMajorVersionChange');
-    
+
     // Use the repository to fetch remote data using the current version
     PerformanceTracker.startTracking('getRemoteManifest');
     final AssetManifest remoteManifest = await _repository.getRemoteManifest(
-     _currentVersion,
+      _currentVersion,
     );
     PerformanceTracker.endTracking('getRemoteManifest');
 
@@ -143,7 +141,7 @@ class GetDummyAssetsUseCase<T> {
       0,
     );
     PerformanceTracker.endTracking('generateDummyAssets_P0Only');
-    
+
     // _dummyAssets.value = dummyAssets;
 
     // Process remaining assets in the background
@@ -158,7 +156,7 @@ class GetDummyAssetsUseCase<T> {
     AssetManifest localManifest,
   ) async {
     PerformanceTracker.startTracking('_handleMinorPatchChange');
-    
+
     // Generate assets using only local manifest
     PerformanceTracker.startTracking('generateDummyAssets_local');
     await _generateDummyAssets(
@@ -174,12 +172,12 @@ class GetDummyAssetsUseCase<T> {
     return _dummyAssets!;
   }
 
-    /// Handle no version changes using local manifest first
+  /// Handle no version changes using local manifest first
   Future<T> _handleNoVersionChange(
     AssetManifest localManifest,
   ) async {
     PerformanceTracker.startTracking('_handleNoVersionChange');
-    
+
     // Generate assets using only local manifest
     PerformanceTracker.startTracking('generateDummyAssets_local');
     await _generateDummyAssets(
@@ -187,10 +185,9 @@ class GetDummyAssetsUseCase<T> {
       null,
     );
     PerformanceTracker.endTracking('generateDummyAssets_local');
-  
 
     PerformanceTracker.endTracking('_handleNoVersionChange');
-   return _dummyAssets!;
+    return _dummyAssets!;
   }
 
   /// Process remaining assets and update in background
@@ -199,7 +196,7 @@ class GetDummyAssetsUseCase<T> {
     AssetManifest remoteManifest,
   ) async {
     PerformanceTracker.startTracking('_updateAssetsInBackground');
-    
+
     try {
       // Process lower priority assets in the background
       PerformanceTracker.startTracking('processBackgroundAssets');
@@ -217,16 +214,14 @@ class GetDummyAssetsUseCase<T> {
 
       // Update the asset map with all priorities
       PerformanceTracker.startTracking('generateDummyAssets_allPriorities');
-       await _generateDummyAssets(
-          remoteManifest, null);
+      await _generateDummyAssets(remoteManifest, null);
       PerformanceTracker.endTracking('generateDummyAssets_allPriorities');
-    
 
       _logger.info('Background asset update complete');
     } catch (e, stackTrace) {
       _logger.error('Error in background asset update', e, stackTrace);
     }
-    
+
     PerformanceTracker.endTracking('_updateAssetsInBackground');
   }
 
@@ -234,7 +229,7 @@ class GetDummyAssetsUseCase<T> {
   Future<void> _updateRemoteAssetsInBackground(
       AssetManifest localManifest) async {
     PerformanceTracker.startTracking('_updateRemoteAssetsInBackground');
-    
+
     try {
       // Fetch remote manifest in background
       PerformanceTracker.startTracking('getRemoteManifest_background');
@@ -263,21 +258,12 @@ class GetDummyAssetsUseCase<T> {
       await _assetCleanupUseCase.cleanupBasedOnDiff(diff);
       PerformanceTracker.endTracking('cleanupBasedOnDiff_background');
 
-      // Update asset map if needed
-      if (diff.hasChanges) {
-        PerformanceTracker.startTracking('generateDummyAssets_afterUpdate');
-        // final dummyAssets = await _generateDummyAssetsUseCase
-        //     .generateDummyAssets(remoteManifest, null);
-        PerformanceTracker.endTracking('generateDummyAssets_afterUpdate');
-        
-      }
-
       _logger.info(
           'Background remote asset update complete for minor/patch change');
     } catch (e, stackTrace) {
       _logger.error('Error in background remote asset update', e, stackTrace);
     }
-    
+
     PerformanceTracker.endTracking('_updateRemoteAssetsInBackground');
   }
 
@@ -285,21 +271,20 @@ class GetDummyAssetsUseCase<T> {
     AssetManifest manifest,
     int? priorityFilter,
   ) async {
-
+    // Use the AssetUrlGenerator to create the asset map
     Map<String, String> assetMap = {};
-
-    // Filter assets by priority if needed
-    final assetsToInclude = priorityFilter != null
-        ? manifest.assets.where((e) => e.priority == priorityFilter)
-        : manifest.assets;
-
-    // Build the asset map
-    for (var asset in assetsToInclude) {
-      assetMap[asset.path] = "${await _repository.getAssetRefPath(asset.path)};${manifest.version}";
+    for (final asset in manifest.assets) {
+      if (priorityFilter == null || asset.priority == priorityFilter) {
+        assetMap[asset.path] = DynamicAssetUrl(
+          path: asset.path,
+          version: manifest.version,
+        ).toUrl();
+      }
     }
 
+    _logger.info('Asset map generated with ${assetMap.length} assets');
+
     _logger.debug('Generated DummyAssets with ${assetMap.length} assets');
-     _assetMapper.updateFromAssetMap(
-      _dummyAssets!, assetMap);
+    _assetMapper.updateFromAssetMap(_dummyAssets!, assetMap);
   }
 }

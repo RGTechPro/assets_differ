@@ -117,10 +117,4 @@ class LocalAssetDataSource {
       print('Error clearing manifest: $e');
     }
   }
-
-  /// Gets the base path for storing local assets
-  Future<String> getAssetRefPath(String assetPath) async {
-    return await FileStorageService.instance.getBaseLocalAssetPath() +
-        assetPath;
-  }
 }

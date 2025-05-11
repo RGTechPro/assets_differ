@@ -44,10 +44,6 @@ class DummyDataRepository {
     }
   }
 
-  Future<String> getAssetRefPath(String path) async {
-    return await _localDataSource.getAssetRefPath(path);
-  }
-
   /// Clear local manifest from storage
   Future<void> clearLocalManifest() async {
     await _localDataSource.clearManifest();

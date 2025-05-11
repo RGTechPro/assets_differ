@@ -1,28 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import '../services/file_storage_service.dart';
-
-class AssetInfo {
-  final String assetPath;
-  final String? cacheVersion;
-
-  AssetInfo(this.assetPath, this.cacheVersion);
-
-  @override
-  int get hashCode => Object.hash(assetPath, cacheVersion);
-  @override
-  String toString() => 'AssetInfo($assetPath, $cacheVersion)';
-  @override
-  bool operator ==(Object other) {
-    if (other is AssetInfo) {
-      return assetPath == other.assetPath && cacheVersion == other.cacheVersion;
-    }
-    return false;
-  }
-}
 
 /// Image provider that loads images directly from FileStorageService.
 /// This works with asset paths stored in the app's local storage system.
@@ -33,18 +15,10 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
   FileAssetImageProvider(
     String assetPath, {
     this.scale = 1.0,
-  }) : assetInfo = _getAssetInfo(assetPath);
-
-  static AssetInfo _getAssetInfo(String assetInfo) {
-    final assetData = assetInfo.split(";");
-    return AssetInfo(
-      assetData.first,
-      assetData.length > 1 ? assetData.last : null,
-    );
-  }
+  }) : assetInfo = DynamicAssetUrl.parse(assetPath);
 
   /// The path to the asset in the local storage system.
-  final AssetInfo assetInfo;
+  final DynamicAssetUrl assetInfo;
 
   /// The scale to place in the [ImageInfo] object of the image.
   final double scale;
@@ -69,14 +43,14 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
   Future<ui.Codec> _loadAsync(
       FileAssetImageProvider key, ImageDecoderCallback decode) async {
     try {
-      final assetPath = key.assetInfo.assetPath;
+      final assetPath = key.assetInfo.path;
 
       // Directly use FileStorageService to get the asset
       final String data =
           await FileStorageService.instance.getAssetByPath(assetPath);
 
       if (data.isEmpty) {
-        throw StateError('Asset not found: ${key.assetInfo.assetPath}');
+        throw StateError('Asset not found: ${key.assetInfo.path}');
       }
 
       // Extract base64 data if it's a data URI
@@ -96,7 +70,7 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
       return codec;
     } catch (e) {
       throw StateError(
-          'Failed to load image from asset path ${key.assetInfo.assetPath}: $e');
+          'Failed to load image from asset path ${key.assetInfo.path}: $e');
     }
   }
 

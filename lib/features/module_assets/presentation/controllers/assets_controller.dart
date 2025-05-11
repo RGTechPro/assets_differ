@@ -1,7 +1,9 @@
+import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:get/get.dart';
 
-const String kZeroPixel = 'assets/zero_pixel.png';
+const DynamicAssetUrl kZeroPixel =
+    DynamicAssetUrl(path: 'assets/zero_pixel.png', version: '');
 
 class DummyAssets {
   final RxString logoImage;
@@ -24,18 +26,20 @@ class DummyAssetsMapper implements AssetMapper<DummyAssets> {
   const DummyAssetsMapper();
   @override
   DummyAssets empty() {
+    final zeroURI = kZeroPixel.toUrl();
     return DummyAssets(
-      logoImage: RxString(kZeroPixel),
-      menuIcon: RxString(kZeroPixel),
-      bannerImage: RxString(kZeroPixel),
+      logoImage: RxString(zeroURI),
+      menuIcon: RxString(zeroURI),
+      bannerImage: RxString(zeroURI),
     );
   }
 
   @override
   void updateFromAssetMap(DummyAssets assets, Map<String, String> json) {
-    assets.logoImage.value = json['assets/logo.png'] ?? kZeroPixel;
-    assets.menuIcon.value = json['assets/menu_icon.png'] ?? kZeroPixel;
-    assets.bannerImage.value = json['assets/banner1.png'] ?? kZeroPixel;
+    final zeroURI = kZeroPixel.toUrl();
+    assets.logoImage.value = json['assets/logo.png'] ?? zeroURI;
+    assets.menuIcon.value = json['assets/menu_icon.png'] ?? zeroURI;
+    assets.bannerImage.value = json['assets/banner1.png'] ?? zeroURI;
   }
 }
 

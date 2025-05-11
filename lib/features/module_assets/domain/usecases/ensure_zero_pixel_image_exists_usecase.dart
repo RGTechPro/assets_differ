@@ -14,6 +14,8 @@ class EnsureZeroPixelImageExistsUseCase {
   final SaveUint8ListImageUseCase _saveUint8ListImageUseCase;
   final _logger = AssetLogger('EnsureZeroPixelImageExistsUseCase');
 
+  final zeroPixelPath = kZeroPixel.path;
+
   /// Constructor with dependency injection
   EnsureZeroPixelImageExistsUseCase({
     required DummyDataRepository repository,
@@ -29,9 +31,11 @@ class EnsureZeroPixelImageExistsUseCase {
     PerformanceTracker.startTracking('EnsureZeroPixelImageExistsUseCase.execute');
     
     try {
+      
       // First check if the zero pixel image already exists
       try {
-        final Uint8List? zeroAssetPath = await _repository.getAssetByPath(kZeroPixel);
+        
+        final Uint8List? zeroAssetPath = await _repository.getAssetByPath(zeroPixelPath);
         if (zeroAssetPath != null) {
           _logger.info('Zero pixel image already exists');
           PerformanceTracker.endTracking('EnsureZeroPixelImageExistsUseCase.execute');
@@ -57,7 +61,7 @@ class EnsureZeroPixelImageExistsUseCase {
         
         // Save to repository
         final result = await _saveUint8ListImageUseCase.executeFromBase64(
-          assetPath: kZeroPixel, 
+          assetPath: zeroPixelPath, 
           base64String: base64Image
         );
         
@@ -87,7 +91,7 @@ class EnsureZeroPixelImageExistsUseCase {
     try {
       // First check if the zero pixel image already exists
       try {
-        final Uint8List? zeroAssetPath = await _repository.getAssetByPath(kZeroPixel);
+        final Uint8List? zeroAssetPath = await _repository.getAssetByPath(zeroPixelPath);
         if (zeroAssetPath != null) {
           _logger.info('Zero pixel image already exists');
           PerformanceTracker.endTracking('EnsureZeroPixelImageExistsUseCase.executeUsingHelper');
@@ -99,7 +103,7 @@ class EnsureZeroPixelImageExistsUseCase {
       }
 
       // Use the dedicated method in SaveUint8ListImageUseCase
-      final result = await _saveUint8ListImageUseCase.generateAndSaveTransparentPixel(kZeroPixel);
+      final result = await _saveUint8ListImageUseCase.generateAndSaveTransparentPixel(zeroPixelPath);
       
       _logger.info('Generated and saved zero pixel image using helper - success: ${result.isSuccess}');
       PerformanceTracker.endTracking('EnsureZeroPixelImageExistsUseCase.executeUsingHelper');
