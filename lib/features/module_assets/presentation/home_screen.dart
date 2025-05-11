@@ -261,6 +261,7 @@ class P0AssetsScreen extends StatefulWidget {
     required ModuleAssetsDependencyProvider dependencyProvider,
   })  : assetsController = AssetsController(
           dependencyProvider: dependencyProvider,
+          dummyAssets: dependencyProvider.provideGetDummyAssetsUseCase().dummyAssets,
         ),
         repository = dependencyProvider.provideDummyDataRepository(),
         super(key: key);

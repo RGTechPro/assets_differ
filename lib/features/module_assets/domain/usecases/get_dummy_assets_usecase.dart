@@ -19,25 +19,25 @@ class GetDummyAssetsUseCase {
   final ManifestCompareUseCase _manifestCompareUseCase;
   final AssetDownloadUseCase _assetDownloadUseCase;
   final AssetCleanupUseCase _assetCleanupUseCase;
-  final GenerateDummyAssetsUseCase _generateDummyAssetsUseCase;
   final VersionCompareUseCase _versionCompareUseCase;
   final EnsureZeroPixelImageExistsUseCase _ensureZeroPixelImageExistsUseCase;
   final String _currentVersion;
   final _logger = AssetLogger('GetDummyAssetsUseCase');
 
-  // Observable asset state
-  final Rx<DummyAssets> _dummyAssets = DummyAssets(
-    logoImage: kZeroPixel,
-    menuIcon: kZeroPixel,
-    bannerImage: kZeroPixel,
-  ).obs;
+  final AssetMapper<DummyAssets> _assetMapper;
+
+  DummyAssets get dummyAssets => _dummyAssets!;
+
+  DummyAssets? _dummyAssets;
+
 
   GetDummyAssetsUseCase({
     required DummyDataRepository repository,
     required ManifestCompareUseCase manifestCompareUseCase,
     required AssetDownloadUseCase assetDownloadUseCase,
     required AssetCleanupUseCase assetCleanupUseCase,
-    required GenerateDummyAssetsUseCase generateDummyAssetsUseCase,
+    required AssetMapper<DummyAssets> assetMapper,
+    // required GenerateDummyAssetsUseCase generateDummyAssetsUseCase,
     required VersionCompareUseCase versionCompareUseCase,
     required EnsureZeroPixelImageExistsUseCase ensureZeroPixelImageExistsUseCase,
     required String currentVersion, 
@@ -45,15 +45,24 @@ class GetDummyAssetsUseCase {
         _manifestCompareUseCase = manifestCompareUseCase,
         _assetDownloadUseCase = assetDownloadUseCase,
         _assetCleanupUseCase = assetCleanupUseCase,
-        _generateDummyAssetsUseCase = generateDummyAssetsUseCase,
+        _assetMapper = assetMapper,
+        // _generateDummyAssetsUseCase = generateDummyAssetsUseCase,
         _versionCompareUseCase = versionCompareUseCase,
         _ensureZeroPixelImageExistsUseCase = ensureZeroPixelImageExistsUseCase;
 
-  /// The current DummyAssets as an observable
-  Rx<DummyAssets> get dummyAssets => _dummyAssets;
+  // /// The current DummyAssets as an observable
+  // Rx<DummyAssets> get dummyAssets => _dummyAssets;
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<DummyAssets> execute() async {
+
+    if (_dummyAssets != null) {
+      // If assets are already loaded, return them
+      return _dummyAssets!;
+    }
+
+    _dummyAssets = _assetMapper.empty();
+
     // First ensure that the zero pixel placeholder image exists
     await _ensureZeroPixelImageExistsUseCase.execute();
     
@@ -137,19 +146,19 @@ class GetDummyAssetsUseCase {
 
     // Generate the initial assets map with P0 assets
     PerformanceTracker.startTracking('generateDummyAssets_P0Only');
-    final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
+    await _generateDummyAssets(
       remoteManifest,
       0,
     );
     PerformanceTracker.endTracking('generateDummyAssets_P0Only');
     
-    _dummyAssets.value = dummyAssets;
+    // _dummyAssets.value = dummyAssets;
 
     // Process remaining assets in the background
     _updateAssetsInBackground(diff, remoteManifest);
 
     PerformanceTracker.endTracking('_handleMajorVersionChange');
-    return dummyAssets;
+    return _dummyAssets!;
   }
 
   /// Handle minor or patch version changes using local manifest first
@@ -160,19 +169,17 @@ class GetDummyAssetsUseCase {
     
     // Generate assets using only local manifest
     PerformanceTracker.startTracking('generateDummyAssets_local');
-    final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
+    await _generateDummyAssets(
       localManifest,
       null,
     );
     PerformanceTracker.endTracking('generateDummyAssets_local');
-    
-    _dummyAssets.value = dummyAssets;
 
     // Start remote manifest update in background
     _updateRemoteAssetsInBackground(localManifest);
 
     PerformanceTracker.endTracking('_handleMinorPatchChange');
-    return dummyAssets;
+    return _dummyAssets!;
   }
 
     /// Handle no version changes using local manifest first
@@ -183,16 +190,15 @@ class GetDummyAssetsUseCase {
     
     // Generate assets using only local manifest
     PerformanceTracker.startTracking('generateDummyAssets_local');
-    final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
+    await _generateDummyAssets(
       localManifest,
       null,
     );
     PerformanceTracker.endTracking('generateDummyAssets_local');
-    
-    _dummyAssets.value = dummyAssets;
+  
 
     PerformanceTracker.endTracking('_handleNoVersionChange');
-    return dummyAssets;
+   return _dummyAssets!;
   }
 
   /// Process remaining assets and update in background
@@ -219,11 +225,10 @@ class GetDummyAssetsUseCase {
 
       // Update the asset map with all priorities
       PerformanceTracker.startTracking('generateDummyAssets_allPriorities');
-      final dummyAssets = await _generateDummyAssetsUseCase.generateDummyAssets(
+       await _generateDummyAssets(
           remoteManifest, null);
       PerformanceTracker.endTracking('generateDummyAssets_allPriorities');
-      
-      _dummyAssets.value = dummyAssets;
+    
 
       _logger.info('Background asset update complete');
     } catch (e, stackTrace) {
@@ -269,11 +274,10 @@ class GetDummyAssetsUseCase {
       // Update asset map if needed
       if (diff.hasChanges) {
         PerformanceTracker.startTracking('generateDummyAssets_afterUpdate');
-        final dummyAssets = await _generateDummyAssetsUseCase
-            .generateDummyAssets(remoteManifest, null);
+        // final dummyAssets = await _generateDummyAssetsUseCase
+        //     .generateDummyAssets(remoteManifest, null);
         PerformanceTracker.endTracking('generateDummyAssets_afterUpdate');
         
-        _dummyAssets.value = dummyAssets;
       }
 
       _logger.info(
@@ -283,5 +287,27 @@ class GetDummyAssetsUseCase {
     }
     
     PerformanceTracker.endTracking('_updateRemoteAssetsInBackground');
+  }
+
+  Future<void> _generateDummyAssets(
+    AssetManifest manifest,
+    int? priorityFilter,
+  ) async {
+
+    Map<String, String> assetMap = {};
+
+    // Filter assets by priority if needed
+    final assetsToInclude = priorityFilter != null
+        ? manifest.assets.where((e) => e.priority == priorityFilter)
+        : manifest.assets;
+
+    // Build the asset map
+    for (var asset in assetsToInclude) {
+      assetMap[asset.path] = "${await _repository.getAssetRefPath(asset.path)};${manifest.version}";
+    }
+
+    _logger.debug('Generated DummyAssets with ${assetMap.length} assets');
+     _assetMapper.updateFromAssetMap(
+      _dummyAssets!, assetMap);
   }
 }

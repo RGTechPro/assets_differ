@@ -4,31 +4,44 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import '../services/file_storage_service.dart';
-import '../../core/utils/performance_tracker.dart';
 
 class AssetInfo {
   final String assetPath;
   final String? cacheVersion;
 
   AssetInfo(this.assetPath, this.cacheVersion);
+
+  @override
+  int get hashCode => Object.hash(assetPath, cacheVersion);
+  @override
+  String toString() => 'AssetInfo($assetPath, $cacheVersion)';
+  @override
+  bool operator ==(Object other) {
+    if (other is AssetInfo) {
+      return assetPath == other.assetPath && cacheVersion == other.cacheVersion;
+    }
+    return false;
+  }
 }
 
 /// Image provider that loads images directly from FileStorageService.
 /// This works with asset paths stored in the app's local storage system.
 class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
   /// Creates an object that fetches the image from FileStorageService.
-  /// 
+  ///
   /// The [assetPath] argument must not be null.
   FileAssetImageProvider(
     String assetPath, {
     this.scale = 1.0,
-  }): assetInfo = _getAssetInfo(assetPath);
+  }) : assetInfo = _getAssetInfo(assetPath);
 
-
-  static AssetInfo _getAssetInfo(String assetInfo){
-     final assetData = assetInfo.split(";");
-     return AssetInfo(assetData.first, assetData.length > 1 ? assetData.last : null);
-  } 
+  static AssetInfo _getAssetInfo(String assetInfo) {
+    final assetData = assetInfo.split(";");
+    return AssetInfo(
+      assetData.first,
+      assetData.length > 1 ? assetData.last : null,
+    );
+  }
 
   /// The path to the asset in the local storage system.
   final AssetInfo assetInfo;
@@ -42,24 +55,26 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
   }
 
   @override
-  ImageStreamCompleter loadImage(FileAssetImageProvider key, ImageDecoderCallback decode) {
+  ImageStreamCompleter loadImage(
+    FileAssetImageProvider key,
+    ImageDecoderCallback decode,
+  ) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: key.scale,
-      debugLabel: 'FileAssetImageProvider(${key.assetInfo.assetPath})',
+      debugLabel: 'FileAssetImageProvider(${key.assetInfo}, scale: $scale)',
     );
   }
 
-  Future<ui.Codec> _loadAsync(FileAssetImageProvider key, ImageDecoderCallback decode) async {
+  Future<ui.Codec> _loadAsync(
+      FileAssetImageProvider key, ImageDecoderCallback decode) async {
     try {
-      PerformanceTracker.startTracking('FileAssetImageProvider.loadAsync');
-
       final assetPath = key.assetInfo.assetPath;
 
-
       // Directly use FileStorageService to get the asset
-      final String data = await FileStorageService.instance.getAssetByPath(assetPath);
-      
+      final String data =
+          await FileStorageService.instance.getAssetByPath(assetPath);
+
       if (data.isEmpty) {
         throw StateError('Asset not found: ${key.assetInfo.assetPath}');
       }
@@ -74,14 +89,14 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
       final Uint8List bytes = base64Decode(base64Data);
 
       // Create an ImmutableBuffer from the bytes and decode with the provided callback
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(bytes);
       final ui.Codec codec = await decode(buffer);
-      
-      PerformanceTracker.endTracking('FileAssetImageProvider.loadAsync');
+
       return codec;
     } catch (e) {
-      PerformanceTracker.endTracking('FileAssetImageProvider.loadAsync');
-      throw StateError('Failed to load image from asset path ${key.assetInfo.assetPath}: $e');
+      throw StateError(
+          'Failed to load image from asset path ${key.assetInfo.assetPath}: $e');
     }
   }
 
@@ -90,17 +105,17 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is FileAssetImageProvider
-        && other.assetInfo.assetPath == assetInfo.assetPath
-        && other.scale == scale
-        && other.assetInfo.cacheVersion == assetInfo.cacheVersion;
+    return other is FileAssetImageProvider &&
+        other.assetInfo == assetInfo &&
+        other.scale == scale;
   }
 
   @override
-  int get hashCode => Object.hash(assetInfo.assetPath, scale, assetInfo.cacheVersion);
+  int get hashCode => Object.hash(assetInfo, scale);
 
   @override
-  String toString() => '${objectRuntimeType(this, 'FileAssetImageProvider')}(${assetInfo.assetPath}, scale: $scale)';
+  String toString() =>
+      '${objectRuntimeType(this, 'FileAssetImageProvider')}($assetInfo, scale: $scale)';
 }
 
 //TODO: TO[@shashank] - [Base64ImageProvider] may not be needed in the future
@@ -108,7 +123,7 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
 /// This can handle both raw base64 strings and data URIs (e.g., 'data:image/png;base64,...').
 class Base64ImageProvider extends ImageProvider<Base64ImageProvider> {
   /// Creates an object that decodes a base64 string as an image.
-  /// 
+  ///
   /// The [base64String] argument must not be null.
   const Base64ImageProvider(
     this.base64String, {
@@ -127,7 +142,8 @@ class Base64ImageProvider extends ImageProvider<Base64ImageProvider> {
   }
 
   @override
-  ImageStreamCompleter loadImage(Base64ImageProvider key, ImageDecoderCallback decode) {
+  ImageStreamCompleter loadImage(
+      Base64ImageProvider key, ImageDecoderCallback decode) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: key.scale,
@@ -135,7 +151,8 @@ class Base64ImageProvider extends ImageProvider<Base64ImageProvider> {
     );
   }
 
-  Future<ui.Codec> _loadAsync(Base64ImageProvider key, ImageDecoderCallback decode) async {
+  Future<ui.Codec> _loadAsync(
+      Base64ImageProvider key, ImageDecoderCallback decode) async {
     try {
       // Extract base64 string from the data URI if present
       String base64Data = key.base64String;
@@ -147,7 +164,8 @@ class Base64ImageProvider extends ImageProvider<Base64ImageProvider> {
       final Uint8List bytes = base64Decode(base64Data);
 
       // Create an ImmutableBuffer from the bytes and decode with the provided callback
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(bytes);
       return decode(buffer);
     } catch (e) {
       // If there's any error in decoding, rethrow with more details
@@ -157,16 +175,16 @@ class Base64ImageProvider extends ImageProvider<Base64ImageProvider> {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is Base64ImageProvider
-        && other.base64String == base64String
-        && other.scale == scale;
+    if (other.runtimeType != runtimeType) return false;
+    return other is Base64ImageProvider &&
+        other.base64String == base64String &&
+        other.scale == scale;
   }
 
   @override
   int get hashCode => Object.hash(base64String, scale);
 
   @override
-  String toString() => '${objectRuntimeType(this, 'Base64ImageProvider')}($base64String, scale: $scale)';
+  String toString() =>
+      '${objectRuntimeType(this, 'Base64ImageProvider')}($base64String, scale: $scale)';
 }

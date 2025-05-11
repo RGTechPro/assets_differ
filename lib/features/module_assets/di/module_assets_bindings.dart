@@ -2,13 +2,13 @@ import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero
 import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/download_asset_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
+import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 
 import '../data/dummy_data_repository.dart';
 import '../domain/usecases/get_dummy_assets_usecase.dart';
 import '../domain/usecases/manifest_compare_usecase.dart';
 import '../domain/usecases/asset_download_usecase.dart';
 import '../domain/usecases/asset_cleanup_usecase.dart';
-import '../domain/usecases/generate_dummy_assets_usecase.dart';
 
 class ModuleAssetsConfig {
   final String curentAssetVersion;
@@ -26,7 +26,6 @@ class ModuleAssetsDependencyProvider {
   ManifestCompareUseCase? _manifestCompareUseCase;
   AssetDownloadUseCase? _assetDownloadUseCase;
   AssetCleanupUseCase? _assetCleanupUseCase;
-  GenerateDummyAssetsUseCase? _generateDummyAssetsUseCase;
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
   DownloadAssetUseCase? _downloadAssetUseCase;
   VersionCompareUseCase? _versionCompareUseCase;
@@ -61,12 +60,6 @@ class ModuleAssetsDependencyProvider {
         AssetCleanupUseCase(provideDummyDataRepository());
   }
 
-  // Provide generate dummy assets use case
-  GenerateDummyAssetsUseCase provideGenerateDummyAssetsUseCase() {
-    return _generateDummyAssetsUseCase ??=
-        GenerateDummyAssetsUseCase(provideDummyDataRepository());
-  }
-
   // Provide download asset use case
   DownloadAssetUseCase provideDownloadAssetUseCase() {
     return _downloadAssetUseCase ??= DownloadAssetUseCase(
@@ -88,7 +81,7 @@ class ModuleAssetsDependencyProvider {
       manifestCompareUseCase: provideManifestCompareUseCase(),
       assetDownloadUseCase: provideAssetDownloadUseCase(),
       assetCleanupUseCase: provideAssetCleanupUseCase(),
-      generateDummyAssetsUseCase: provideGenerateDummyAssetsUseCase(),
+      assetMapper: const DummyAssetsAssetMapper(),
       versionCompareUseCase: provideVersionCompareUseCase(),
       ensureZeroPixelImageExistsUseCase: EnsureZeroPixelImageExistsUseCase(
         repository: provideDummyDataRepository(),
@@ -111,7 +104,6 @@ class ModuleAssetsDependencyProvider {
     _manifestCompareUseCase = null;
     _assetDownloadUseCase = null;
     _assetCleanupUseCase = null;
-    _generateDummyAssetsUseCase = null;
     _getDummyAssetsUseCase = null;
     _downloadAssetUseCase = null;
     _versionCompareUseCase = null;
