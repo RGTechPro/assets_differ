@@ -1,6 +1,4 @@
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/download_asset_usecase.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/manifest_compare_usecase.dart';
 
