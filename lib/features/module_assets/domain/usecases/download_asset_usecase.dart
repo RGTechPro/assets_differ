@@ -14,22 +14,25 @@ class DownloadAssetUseCase {
   final _logger = AssetLogger('DownloadAssetUseCase');
 
   /// Constructor with dependency injection
-  DownloadAssetUseCase(this._repository) {
-    _saveUint8ListImageUseCase = SaveUint8ListImageUseCase(_repository);
-  }
+  DownloadAssetUseCase({
+    required SaveUint8ListImageUseCase saveUint8ListImageUseCase,
+    required DummyDataRepository repository,
+  })  : _saveUint8ListImageUseCase = saveUint8ListImageUseCase,
+        _repository = repository;
 
   /// Download and save a single asset based on its type
   Future<ImageUploadResponse> execute(AssetItem asset) async {
     PerformanceTracker.startTracking('DownloadAssetUseCase.execute');
-    
+
     try {
       _logger.debug('Downloading asset: ${asset.path}');
-      
+
       // Download the image data as bytes
       PerformanceTracker.startTracking('RemoteDataSource.loadImageFromUrl');
-      final Uint8List imageBytes = await _repository.loadImageFromUrl(asset.url);
+      final Uint8List imageBytes =
+          await _repository.loadImageFromUrl(asset.url);
       PerformanceTracker.endTracking('RemoteDataSource.loadImageFromUrl');
-      
+
       // Delegate saving to the specialized use case
       final format = _getImageFormat(asset.path);
       final response = await _saveUint8ListImageUseCase.execute(
@@ -37,13 +40,15 @@ class DownloadAssetUseCase {
         imageBytes: imageBytes,
         format: format,
       );
-      
+
       if (response.isSuccess) {
-        _logger.debug('Successfully saved asset: ${asset.path} (${response.imageBytesLength} bytes)');
+        _logger.debug(
+            'Successfully saved asset: ${asset.path} (${response.imageBytesLength} bytes)');
       } else {
-        _logger.error('Failed to save asset ${asset.path}', 'Save operation failed', StackTrace.current);
+        _logger.error('Failed to save asset ${asset.path}',
+            'Save operation failed', StackTrace.current);
       }
-      
+
       return response;
     } catch (e, stackTrace) {
       _logger.error('Failed to download asset: ${asset.path}', e, stackTrace);
@@ -55,7 +60,7 @@ class DownloadAssetUseCase {
       PerformanceTracker.endTracking('DownloadAssetUseCase.execute');
     }
   }
-  
+
   /// Determine image format from file extension
   String _getImageFormat(String path) {
     final String ext = path.toLowerCase().split('.').last;

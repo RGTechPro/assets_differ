@@ -20,7 +20,6 @@ class ModuleAssetsConfig {
 
 /// Dependency provider for the module assets feature
 class ModuleAssetsDependencyProvider<T> {
-
   final AssetMapper<T> assetMapper;
 
   DummyDataRepository? _dummyDataRepository;
@@ -55,7 +54,7 @@ class ModuleAssetsDependencyProvider<T> {
   // Provide asset download use case
   AssetDownloadUseCase provideAssetDownloadUseCase() {
     return _assetDownloadUseCase ??=
-        AssetDownloadUseCase(provideDummyDataRepository());
+        AssetDownloadUseCase(provideDownloadAssetUseCase());
   }
 
   // Provide asset cleanup use case
@@ -67,7 +66,8 @@ class ModuleAssetsDependencyProvider<T> {
   // Provide download asset use case
   DownloadAssetUseCase provideDownloadAssetUseCase() {
     return _downloadAssetUseCase ??= DownloadAssetUseCase(
-      provideDummyDataRepository(),
+      repository: provideDummyDataRepository(),
+      saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
     );
   }
 
@@ -82,15 +82,13 @@ class ModuleAssetsDependencyProvider<T> {
   GetDummyAssetsUseCase provideGetDummyAssetsUseCase() {
     _getDummyAssetsUseCase ??= GetDummyAssetsUseCase(
       repository: provideDummyDataRepository(),
+      saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
       manifestCompareUseCase: provideManifestCompareUseCase(),
       assetDownloadUseCase: provideAssetDownloadUseCase(),
       assetCleanupUseCase: provideAssetCleanupUseCase(),
       assetMapper: assetMapper,
       versionCompareUseCase: provideVersionCompareUseCase(),
-      ensureZeroPixelImageExistsUseCase: EnsureZeroPixelImageExistsUseCase(
-        repository: provideDummyDataRepository(),
-        saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
-      ),
+      zeroPixelImageDataGenerator: ZeroPixelImageDataGeneratorUsecase(),
       currentVersion: _assetsConfig.curentAssetVersion,
     );
     return _getDummyAssetsUseCase!;

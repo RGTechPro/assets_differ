@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/manifest_compare_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/asset_download_usecase.dart';
@@ -18,7 +21,7 @@ class GetDummyAssetsUseCase<T> {
   final AssetDownloadUseCase _assetDownloadUseCase;
   final AssetCleanupUseCase _assetCleanupUseCase;
   final VersionCompareUseCase _versionCompareUseCase;
-  final EnsureZeroPixelImageExistsUseCase _ensureZeroPixelImageExistsUseCase;
+  final ZeroPixelImageDataGeneratorUsecase _zeroPixelImageDataGenerator;
   final String _currentVersion;
   final _logger = AssetLogger('GetDummyAssetsUseCase');
 
@@ -28,6 +31,10 @@ class GetDummyAssetsUseCase<T> {
 
   T? _dummyAssets;
 
+  final SaveUint8ListImageUseCase _saveUint8ListImageUseCase;
+
+  final zeroPixelPath = kZeroPixel.path;
+
   GetDummyAssetsUseCase({
     required DummyDataRepository repository,
     required ManifestCompareUseCase manifestCompareUseCase,
@@ -35,8 +42,9 @@ class GetDummyAssetsUseCase<T> {
     required AssetCleanupUseCase assetCleanupUseCase,
     required AssetMapper<T> assetMapper,
     required VersionCompareUseCase versionCompareUseCase,
-    required EnsureZeroPixelImageExistsUseCase
-        ensureZeroPixelImageExistsUseCase,
+    required SaveUint8ListImageUseCase saveUint8ListImageUseCase,
+    required ZeroPixelImageDataGeneratorUsecase
+        zeroPixelImageDataGenerator,
     required String currentVersion,
   })  : _currentVersion = currentVersion,
         _repository = repository,
@@ -45,7 +53,39 @@ class GetDummyAssetsUseCase<T> {
         _assetCleanupUseCase = assetCleanupUseCase,
         _assetMapper = assetMapper,
         _versionCompareUseCase = versionCompareUseCase,
-        _ensureZeroPixelImageExistsUseCase = ensureZeroPixelImageExistsUseCase;
+        _zeroPixelImageDataGenerator = zeroPixelImageDataGenerator,
+        _saveUint8ListImageUseCase = saveUint8ListImageUseCase;
+
+  Future<void> _generateZeroPixelImage() async {
+    try {
+      final Uint8List? zeroAssetPath =
+          await _repository.getAssetByPath(zeroPixelPath);
+      if (zeroAssetPath != null) {
+        _logger.info('Zero pixel image already exists');
+        PerformanceTracker.endTracking(
+            'EnsureZeroPixelImageExistsUseCase.execute');
+        return;
+      }
+    } catch (e) {
+      // Image doesn't exist - we'll create it
+      _logger.info('Zero pixel image not found - will generate');
+    }
+
+    // First ensure that the zero pixel placeholder image exists
+    final base64Image = await _zeroPixelImageDataGenerator.execute();
+
+    // Save to repository
+    final result = await _saveUint8ListImageUseCase.executeFromBase64(
+      assetPath: zeroPixelPath,
+      base64String: base64Image,
+    );
+
+    if (result.isSuccess) {
+      _logger.info('Zero pixel image saved successfully');
+    } else {
+      _logger.error('Failed to save zero pixel image');
+    }
+  }
 
   /// Execute the use case to get DummyAssets as an Observable
   Future<T> execute() async {
@@ -56,8 +96,7 @@ class GetDummyAssetsUseCase<T> {
 
     _dummyAssets = _assetMapper.empty();
 
-    // First ensure that the zero pixel placeholder image exists
-    await _ensureZeroPixelImageExistsUseCase.execute();
+    await _generateZeroPixelImage();
 
     // Start tracking the entire execution
     PerformanceTracker.startTracking('GetDummyAssetsUseCase.execute');

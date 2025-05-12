@@ -9,10 +9,9 @@ class AssetDownloadUseCase {
   final DummyDataRepository _repository;
   final _logger = AssetLogger('AssetDownloadUseCase');
 
-  AssetDownloadUseCase(this._repository)
-      : _downloadAssetUseCase = DownloadAssetUseCase(
-          _repository,
-        );
+  AssetDownloadUseCase(DownloadAssetUseCase downloadAssetUseCase)
+      : _repository = DummyDataRepository(),
+        _downloadAssetUseCase = downloadAssetUseCase;
   final DownloadAssetUseCase _downloadAssetUseCase;
 
   /// Save assets to local storage
