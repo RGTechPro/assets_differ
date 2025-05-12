@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/asset_models.dart';
@@ -10,7 +11,7 @@ class AssetService {
   final String _appVersion;
   final String _brandId;
   late final String _assetBasePath;
-  late final Directory _assetDirectory;
+  late final Directory? _assetDirectory; // Made nullable to handle web
   
   // Singleton instance
   static AssetService? _instance;
@@ -42,12 +43,19 @@ class AssetService {
   
   /// Initialize the asset service by creating necessary directories
   Future<void> _initialize() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    _assetBasePath = '${appDir.path}/assets';
-    _assetDirectory = Directory(_assetBasePath);
-    
-    if (!await _assetDirectory.exists()) {
-      await _assetDirectory.create(recursive: true);
+    if (kIsWeb) {
+      // For web, we'll use a virtual path since actual file system isn't available
+      _assetBasePath = 'assets';
+      _assetDirectory = null; // No directory on web
+    } else {
+      // For mobile and desktop platforms, use the file system
+      final appDir = await getApplicationDocumentsDirectory();
+      _assetBasePath = '${appDir.path}/assets';
+      _assetDirectory = Directory(_assetBasePath);
+      
+      if (!await _assetDirectory!.exists()) {
+        await _assetDirectory!.create(recursive: true);
+      }
     }
   }
   
@@ -74,31 +82,49 @@ class AssetService {
     }
   }
   
-  /// Download a single asset from the CDN
+  /// Download a CDN asset and save it locally
   Future<void> downloadAsset(CdnAsset asset) async {
     final Uri url = Uri.parse(asset.url);
-    final response = await http.get(url);
     
-    if (response.statusCode == 200) {
-      final String assetPath = '$_assetBasePath/${asset.path}';
-      final File file = File(assetPath);
+    try {
+      final response = await http.get(url);
       
-      // Create parent directories if they don't exist
-      final Directory parent = Directory(file.parent.path);
-      if (!await parent.exists()) {
-        await parent.create(recursive: true);
+      if (response.statusCode == 200) {
+        if (kIsWeb) {
+          // For web, we'll handle storage elsewhere via the storage service
+          print('Downloaded asset: ${asset.path} (web mode)');
+        } else {
+          // For mobile/desktop platforms, save to file system
+          final File file = File('$_assetBasePath/${asset.path}');
+          
+          // Ensure parent directory exists
+          final Directory parent = Directory(file.parent.path);
+          if (!await parent.exists()) {
+            await parent.create(recursive: true);
+          }
+          
+          await file.writeAsBytes(response.bodyBytes);
+          print('Downloaded and saved asset: ${asset.path}');
+        }
+      } else {
+        throw Exception('Failed to download asset: ${response.statusCode}');
       }
-      
-      // Write the asset to the file
-      await file.writeAsBytes(response.bodyBytes);
-    } else {
-      throw Exception('Failed to download asset ${asset.path}: ${response.statusCode}');
+    } catch (e) {
+      print('Error downloading asset ${asset.path}: $e');
+      rethrow;
     }
   }
   
-  /// Download multiple assets in order of priority
+  /// Download a list of assets
   Future<void> downloadAssets(List<CdnAsset> assets) async {
-    // Sort assets by priority
+    if (assets.isEmpty) {
+      print('No assets to download.');
+      return;
+    }
+    
+    print('Downloading ${assets.length} assets...');
+    
+    // Sort assets by priority (lower priority number downloaded first)
     final sortedAssets = List<CdnAsset>.from(assets)
       ..sort((a, b) => a.priority.compareTo(b.priority));
     
@@ -124,12 +150,15 @@ class AssetService {
     });
     
     // Remove deleted assets
-    updateResponse.changes.removed.forEach((path, asset) {
-      final File file = File('$_assetBasePath/${asset.path}');
-      if (file.existsSync()) {
-        file.deleteSync();
-      }
-    });
+    if (!kIsWeb) {
+      // Only perform file operations on non-web platforms
+      updateResponse.changes.removed.forEach((path, asset) {
+        final File file = File('$_assetBasePath/${asset.path}');
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      });
+    }
     
     // Download all new or updated assets
     await downloadAssets(assetsToDownload);
@@ -140,6 +169,13 @@ class AssetService {
   
   /// Save the current version information for a module
   Future<void> _saveModuleVersion(String module, String version) async {
+    if (kIsWeb) {
+      // For web, we'll handle version storage elsewhere
+      print('Saved version for $module: $version (web mode)');
+      return;
+    }
+    
+    // For mobile/desktop platforms
     final File versionFile = File('$_assetBasePath/$module/version.json');
     final Directory parent = Directory(versionFile.parent.path);
     
@@ -155,6 +191,12 @@ class AssetService {
   
   /// Get the current version for a module
   Future<String?> getModuleVersion(String module) async {
+    if (kIsWeb) {
+      // For web, you might want to implement a version check using localStorage
+      // or IndexedDB via the StorageImplementationWeb class
+      return null;
+    }
+    
     final File versionFile = File('$_assetBasePath/$module/version.json');
     
     if (await versionFile.exists()) {
@@ -168,6 +210,11 @@ class AssetService {
   
   /// Check if an asset exists locally
   bool assetExists(String path) {
+    if (kIsWeb) {
+      // For web, always return true and let the storage implementation handle it
+      return true;
+    }
+    
     final File assetFile = File('$_assetBasePath/$path');
     return assetFile.existsSync();
   }

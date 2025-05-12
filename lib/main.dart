@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'features/module_assets/presentation/home_screen.dart';
+import 'package:get/get.dart';
+import 'core/config/app_routes.dart';
 
 void main() {
   runApp(const AssetDifferApp());
@@ -10,13 +11,14 @@ class AssetDifferApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Asset Differ',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      initialRoute: AppRoutes.home,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }
