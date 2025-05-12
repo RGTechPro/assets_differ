@@ -81,9 +81,4 @@ class StorageImplementationIO implements StorageInterface {
     // No resources to close for file system implementation
   }
 
-  @override
-  Future<String> getBaseLocalAssetPath() async {
-    final directory = await _localPath;
-    return '${directory.path}/';
-  }
 }

@@ -70,13 +70,12 @@ class LocalAssetDataSource {
   }
 
   /// Retrieves an asset at the specified path
-  Future<Uint8List> getAssetByPath(String path) async {
+  Future<Uint8List?> getAssetByPath(String path) async {
     PerformanceTracker.startTracking('LocalAssetDataSource.getAssetByPath');
     try {
       final data = await FileStorageService.instance.getAssetByPath(path);
 
-      if (data.isNotEmpty) {
-      
+      if (data != null && data.isNotEmpty) {
                   // Extract base64 data if it's a data URI
           String base64String = data;
           if (data.contains(',')) {
@@ -87,8 +86,8 @@ class LocalAssetDataSource {
         throw Exception('Asset not found: $path');
       }
     } catch (e) {
-      print('Error retrieving asset: $e');
-       return Uint8List(0); // Return empty bytes on error
+       print('Error retrieving asset: $e');
+      return null;
     } finally {
       PerformanceTracker.endTracking('LocalAssetDataSource.getAssetByPath');
     }
@@ -117,11 +116,5 @@ class LocalAssetDataSource {
     } catch (e) {
       print('Error clearing manifest: $e');
     }
-  }
-
-  /// Gets the base path for storing local assets
-  Future<String> getAssetRefPath(String assetPath) async {
-    return await FileStorageService.instance.getBaseLocalAssetPath() +
-        assetPath;
   }
 }

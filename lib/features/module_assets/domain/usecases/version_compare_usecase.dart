@@ -1,4 +1,4 @@
-import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
+import 'package:assets_differ/core/logging.dart';
 
 /// Enum representing different types of version changes
 enum VersionChange {

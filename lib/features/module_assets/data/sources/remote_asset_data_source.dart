@@ -89,8 +89,12 @@ class RemoteAssetDataSource {
   /// Fetch asset data based on version
   /// Returns a Future with the AssetManifest for the requested version
   Future<AssetManifest> getRemoteManifest(String version) async {
+
+    return _getFallbackManifest(version);
+    
     PerformanceTracker.startTracking('RemoteAssetDataSource.getRemoteManifest');
-    final client = http.Client();
+    print('Fetching remote manifest for version: $version');
+
     String endpoint;
 
     // Determine the endpoint based on the version
@@ -108,9 +112,12 @@ class RemoteAssetDataSource {
         endpoint = '/getRemoteManifest/v1'; // Default to latest version
     }
 
+    final client = http.Client();
+
     try {
       // Make the HTTP request to the API
       PerformanceTracker.startTracking('RemoteAssetDataSource.apiHttpRequest');
+      
       final response = await client.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: {'Content-Type': 'application/json'},

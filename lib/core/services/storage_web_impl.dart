@@ -137,8 +137,4 @@ class StorageImplementationWeb implements StorageInterface {
     }
   }
   
-  @override
-  Future<String> getBaseLocalAssetPath() {
-    return Future.value(''); // No local path for web storage
-  }
 }

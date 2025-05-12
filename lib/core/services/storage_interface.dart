@@ -1,7 +1,6 @@
 /// Interface for platform-specific storage implementations
 abstract class StorageInterface {
 
-  Future<String> getBaseLocalAssetPath();
   /// Save asset data by path
   Future<void> saveAsset(String assetPath, String data);
   

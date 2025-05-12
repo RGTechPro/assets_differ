@@ -1,5 +1,4 @@
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/generate_dummy_assets_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isolate_manager/isolate_manager.dart';
@@ -45,12 +44,22 @@ Future<void> isolateSaveAssets(Map<String, dynamic> params) async {
   );
 }
 
+import 'package:assets_differ/core/logging.dart';
+import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
+import 'package:flutter/foundation.dart';
+
 /// UseCase for downloading and saving assets
 class AssetDownloadUseCase {
   final DummyDataRepository _repository;
   final _logger = AssetLogger('AssetDownloadUseCase');
+    final SaveUint8ListImageUseCase _saveUint8ListImageUseCase;
 
-  AssetDownloadUseCase(this._repository);
+  AssetDownloadUseCase({
+    required SaveUint8ListImageUseCase saveUint8ListImageUseCase,
+    required DummyDataRepository repository,
+  })  : _repository = repository,
+        _saveUint8ListImageUseCase = saveUint8ListImageUseCase;
+
 
   /// Save assets to local storage
   Future<void> saveAssetsToLocalStorage(List<AssetItem> assetList) async {
@@ -69,13 +78,41 @@ class AssetDownloadUseCase {
     try {
       _logger.debug('Downloading image: ${asset.url}');
 
-      ImageUploadResponse response =
-          await _repository.downloadAndSaveAsset(asset);
+            final Uint8List imageBytes =
+          await _repository.loadImageFromUrl(asset.url);
+
+      // Delegate saving to the specialized use case
+      final format = _getImageFormat(asset.path);
+      final response = await _saveUint8ListImageUseCase.execute(
+        assetPath: asset.path,
+        imageBytes: imageBytes,
+        format: format,
+      );
 
       _logger.debug(
           'Saved image: ${asset.path} (${response.imageBytesLength} bytes)');
     } catch (e, stackTrace) {
       _logger.error('Failed to process asset ${asset.path}', e, stackTrace);
+    }
+  }
+
+      /// Determine image format from file extension
+  String _getImageFormat(String path) {
+    final String ext = path.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'jpeg';
+      case 'png':
+        return 'png';
+      case 'gif':
+        return 'gif';
+      case 'webp':
+        return 'webp';
+      case 'bmp':
+        return 'bmp';
+      default:
+        return 'png'; // default format
     }
   }
 

@@ -1,74 +1,69 @@
-import 'dart:async';
+import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
-import 'package:assets_differ/features/module_assets/presentation/home_screen.dart';
 import 'package:get/get.dart';
-import '../../domain/usecases/get_dummy_assets_usecase.dart';
 
-const String kZeroPixel = 'assets/images/zero_pixel.png';
+const DynamicAssetUrl kZeroPixel = DynamicAssetUrl(
+  path: 'assets/zero_pixel.png',
+  version: '',
+);
 
 class DummyAssets {
-  final String logoImage;
-  final String menuIcon;
-  final String bannerImage;
+  final RxString logoImage;
+  final RxString menuIcon;
+  final RxString bannerImage;
+
   DummyAssets({
     required this.logoImage,
     required this.menuIcon,
     required this.bannerImage,
   });
+}
 
-  factory DummyAssets.fromAssetMap(Map<String, String> json) {
+abstract class AssetMapper<T> {
+  void updateFromAssetMap(T assets, Map<String, String> json);
+  T empty();
+}
+
+class DummyAssetsMapper implements AssetMapper<DummyAssets> {
+  const DummyAssetsMapper();
+  @override
+  DummyAssets empty() {
+    final zeroURI = kZeroPixel.toUrl();
     return DummyAssets(
-      logoImage: json['assets/logo.png'] ?? kZeroPixel,
-      menuIcon: json['assets/menu_icon.png'] ?? kZeroPixel,
-      bannerImage: json['assets/banner1.png'] ?? kZeroPixel,
+      logoImage: RxString(zeroURI),
+      menuIcon: RxString(zeroURI),
+      bannerImage: RxString(zeroURI),
     );
+  }
+
+  @override
+  void updateFromAssetMap(DummyAssets assets, Map<String, String> json) {
+    final zeroURI = kZeroPixel.toUrl();
+    assets.logoImage.value = json['assets/logo.png'] ?? zeroURI;
+    assets.menuIcon.value = json['assets/menu_icon.png'] ?? zeroURI;
+    assets.bannerImage.value = json['assets/banner1.png'] ?? zeroURI;
   }
 }
 
 class AssetsController extends GetxController {
-  final GetDummyAssetsUseCase _getDummyAssetsUseCase;
-  late final AssetsControllerUIState state;
+  final AssetsControllerUIState state;
   AssetsController({
     required ModuleAssetsDependencyProvider dependencyProvider,
-  })  : _getDummyAssetsUseCase =
-            dependencyProvider.provideGetDummyAssetsUseCase(),
-        state = AssetsControllerUIState(
+    required DummyAssets dummyAssets,
+  }) : state = AssetsControllerUIState(
           p0Section: AssetsSectionUIState(
             title: 'P0 Assets',
-            asset: kZeroPixel.obs,
+            asset: dummyAssets.logoImage,
           ),
           p1Section: AssetsSectionUIState(
             title: 'P1 Assets',
-            asset: kZeroPixel.obs,
+            asset: dummyAssets.menuIcon,
           ),
           p2Section: AssetsSectionUIState(
             title: 'P2 Assets',
-            asset: kZeroPixel.obs,
+            asset: dummyAssets.bannerImage,
           ),
         );
-
-  StreamSubscription? _assetsSubscription;
-
-  Future<void> _initAssets() async {
-    _assetsSubscription =
-        _getDummyAssetsUseCase.dummyAssets.listenAndPump((data) {
-      state.p0Section?.asset.value = data.logoImage;
-      state.p1Section?.asset.value = data.menuIcon;
-      state.p2Section?.asset.value = data.bannerImage;
-    });
-  }
-
-  @override
-  void onInit() {
-    _initAssets();
-    super.onInit();
-  }
-
-  @override
-  void onClose() {
-    _assetsSubscription?.cancel();
-    super.onClose();
-  }
 }
 
 class AssetsControllerUIState {
