@@ -1,6 +1,5 @@
 import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/download_asset_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 
@@ -29,7 +28,6 @@ class ModuleAssetsDependencyProvider<T> {
   AssetDownloadUseCase? _assetDownloadUseCase;
   AssetCleanupUseCase? _assetCleanupUseCase;
   GetDummyAssetsUseCase? _getDummyAssetsUseCase;
-  DownloadAssetUseCase? _downloadAssetUseCase;
   VersionCompareUseCase? _versionCompareUseCase;
   SaveUint8ListImageUseCase? _saveUint8ListImageUseCase;
 
@@ -53,8 +51,10 @@ class ModuleAssetsDependencyProvider<T> {
 
   // Provide asset download use case
   AssetDownloadUseCase provideAssetDownloadUseCase() {
-    return _assetDownloadUseCase ??=
-        AssetDownloadUseCase(provideDownloadAssetUseCase());
+    return _assetDownloadUseCase ??= AssetDownloadUseCase(
+      saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
+      repository: provideDummyDataRepository(),
+    );
   }
 
   // Provide asset cleanup use case
@@ -63,13 +63,6 @@ class ModuleAssetsDependencyProvider<T> {
         AssetCleanupUseCase(provideDummyDataRepository());
   }
 
-  // Provide download asset use case
-  DownloadAssetUseCase provideDownloadAssetUseCase() {
-    return _downloadAssetUseCase ??= DownloadAssetUseCase(
-      repository: provideDummyDataRepository(),
-      saveUint8ListImageUseCase: provideSaveUint8ListImageUseCase(),
-    );
-  }
 
   // Provide version compare use case
   VersionCompareUseCase provideVersionCompareUseCase() {
@@ -107,7 +100,6 @@ class ModuleAssetsDependencyProvider<T> {
     _assetDownloadUseCase = null;
     _assetCleanupUseCase = null;
     _getDummyAssetsUseCase = null;
-    _downloadAssetUseCase = null;
     _versionCompareUseCase = null;
     _saveUint8ListImageUseCase = null;
   }

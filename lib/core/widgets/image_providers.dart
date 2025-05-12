@@ -41,7 +41,9 @@ class FileAssetImageProvider extends ImageProvider<FileAssetImageProvider> {
   }
 
   Future<ui.Codec> _loadAsync(
-      FileAssetImageProvider key, ImageDecoderCallback decode) async {
+    FileAssetImageProvider key,
+    ImageDecoderCallback decode,
+  ) async {
     try {
       final assetPath = key.assetInfo.path;
 

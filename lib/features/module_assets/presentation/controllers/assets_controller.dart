@@ -2,8 +2,10 @@ import 'package:assets_differ/core/models/dynamic_asset_url.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:get/get.dart';
 
-const DynamicAssetUrl kZeroPixel =
-    DynamicAssetUrl(path: 'assets/zero_pixel.png', version: '');
+const DynamicAssetUrl kZeroPixel = DynamicAssetUrl(
+  path: 'assets/zero_pixel.png',
+  version: '',
+);
 
 class DummyAssets {
   final RxString logoImage;
@@ -44,7 +46,7 @@ class DummyAssetsMapper implements AssetMapper<DummyAssets> {
 }
 
 class AssetsController extends GetxController {
-  late final AssetsControllerUIState state;
+  final AssetsControllerUIState state;
   AssetsController({
     required ModuleAssetsDependencyProvider dependencyProvider,
     required DummyAssets dummyAssets,
