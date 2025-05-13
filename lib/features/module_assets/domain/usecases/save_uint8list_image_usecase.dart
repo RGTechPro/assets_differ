@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:assets_differ/core/utils/performance_tracker.dart';
-import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:assets_differ/core/logging.dart';
@@ -58,45 +56,6 @@ class SaveUint8ListImageUseCase {
       );
     } finally {
       PerformanceTracker.endTracking('SaveUint8ListImageUseCase.execute');
-    }
-  }
-  
-  /// Save an image from a base64 string to local storage
-  Future<ImageUploadResponse> executeFromBase64({
-    required String assetPath, 
-    required String base64String,
-    String format = 'png',
-  }) async {
-    PerformanceTracker.startTracking('SaveUint8ListImageUseCase.executeFromBase64');
-    
-    try {
-      _logger.debug('Saving base64 image to path: $assetPath');
-      
-      // Extract base64 data if it's a data URI
-      String cleanBase64 = base64String;
-      if (base64String.contains(',')) {
-        cleanBase64 = base64String.split(',')[1];
-      }
-      
-      // Decode base64 to bytes
-      final Uint8List imageBytes = base64Decode(cleanBase64);
-      
-      // Use the main execute method
-      final result = await execute(
-        assetPath: assetPath,
-        imageBytes: imageBytes,
-        format: format,
-      );
-      
-      return result;
-    } catch (e, stackTrace) {
-      _logger.error('Failed to process base64 string for $assetPath', e, stackTrace);
-      return ImageUploadResponse(
-        imageBytesLength: 0,
-        isSuccess: false,
-      );
-    } finally {
-      PerformanceTracker.endTracking('SaveUint8ListImageUseCase.executeFromBase64');
     }
   }
 }

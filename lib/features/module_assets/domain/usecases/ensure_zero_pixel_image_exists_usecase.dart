@@ -7,7 +7,7 @@ import 'package:assets_differ/core/logging.dart';
 class ZeroPixelImageDataGeneratorUsecase {
   final _logger = AssetLogger('EnsureZeroPixelImageExistsUseCase');
 
-  Future<String> execute() async {
+  Future<Uint8List> execute() async {
     PerformanceTracker.startTracking(
         'EnsureZeroPixelImageExistsUseCase.execute');
 
@@ -28,10 +28,8 @@ class ZeroPixelImageDataGeneratorUsecase {
 
       if (pngData != null) {
         // Convert to base64 encoded string
-        final String base64Image =
-            'data:image/png;base64,${base64Encode(pngData.buffer.asUint8List())}';
 
-        return base64Image;
+        return pngData.buffer.asUint8List();
       }
 
       throw Exception('Failed to generate zero pixel image - ByteData is null');

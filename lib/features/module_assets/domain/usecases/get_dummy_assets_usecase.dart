@@ -72,12 +72,12 @@ class GetDummyAssetsUseCase<T> {
     }
 
     // First ensure that the zero pixel placeholder image exists
-    final base64Image = await _zeroPixelImageDataGenerator.execute();
+    final uint8List = await _zeroPixelImageDataGenerator.execute();
 
     // Save to repository
-    final result = await _saveUint8ListImageUseCase.executeFromBase64(
+    final result = await _saveUint8ListImageUseCase.execute(
       assetPath: zeroPixelPath,
-      base64String: base64Image,
+      imageBytes: uint8List,
     );
 
     if (result.isSuccess) {
