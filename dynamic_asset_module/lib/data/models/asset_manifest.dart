@@ -6,14 +6,14 @@ class AssetItem {
   final String hash;
   final String url;
   final int priority;
-
+  
   AssetItem({
     required this.path,
     required this.hash,
     required this.url,
     required this.priority,
   });
-
+  
   /// Create an AssetItem from JSON
   factory AssetItem.fromJson(Map<String, dynamic> json) {
     return AssetItem(
@@ -23,7 +23,7 @@ class AssetItem {
       priority: json['priority'] as int,
     );
   }
-
+  
   /// Convert AssetItem to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -33,7 +33,7 @@ class AssetItem {
       'priority': priority,
     };
   }
-
+  
   /// Create a copy of this AssetItem with the given fields replaced
   AssetItem copyWith({
     String? path,
@@ -56,20 +56,20 @@ class AssetManifest {
   final String module;
   final List<AssetItem> assets;
   final String? lastUpdated;
-
+  
   AssetManifest({
     required this.version,
     required this.module,
     required this.assets,
     this.lastUpdated,
   });
-
+  
   /// Create an AssetManifest from JSON
   factory AssetManifest.fromJson(Map<String, dynamic> json) {
     final assetList = (json['assets'] as List<dynamic>)
         .map((assetJson) => AssetItem.fromJson(assetJson as Map<String, dynamic>))
         .toList();
-
+    
     return AssetManifest(
       version: json['version'] as String,
       module: json['module'] as String,
@@ -77,14 +77,14 @@ class AssetManifest {
       lastUpdated: json['lastUpdated'] as String?,
     );
   }
-
+  
   /// Create an AssetManifest from a JSON string
   factory AssetManifest.fromJsonString(String jsonString) {
     return AssetManifest.fromJson(
       json.decode(jsonString) as Map<String, dynamic>
     );
   }
-
+  
   /// Convert AssetManifest to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -94,12 +94,12 @@ class AssetManifest {
       if (lastUpdated != null) 'lastUpdated': lastUpdated,
     };
   }
-
+  
   /// Convert AssetManifest to a JSON string
   String toJsonString() {
     return json.encode(toJson());
   }
-
+  
   /// Create a copy of this AssetManifest with the given fields replaced
   AssetManifest copyWith({
     String? version,
