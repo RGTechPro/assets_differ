@@ -34,11 +34,11 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  http: ^1.1.0  # For network requests to download assets
-  path_provider: ^2.0.15  # For accessing app document directory to store assets
   get: ^4.6.5  # Adding GetX for state management
-  shared_preferences: ^2.2.0  # For storing simple data persistently
   idb_shim: ^2.3.1  # IndexedDB for web platform compatibility
+
+  dynamic_asset_module:
+    path: dynamic_asset_module
 
 dev_dependencies:
   flutter_test:

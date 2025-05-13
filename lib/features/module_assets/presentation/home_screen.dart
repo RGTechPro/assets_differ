@@ -1,10 +1,12 @@
 import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/config/app_routes.dart';
 import 'package:assets_differ/core/utils/performance_tracker.dart';
-import 'package:assets_differ/core/widgets/image_providers.dart';
-import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
+import 'package:assets_differ/features/module_assets/presentation/model/dummy_asset.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
+import 'package:dynamic_asset_module/core/image_provide/dynamic_asset_image_provider.dart';
+import 'package:dynamic_asset_module/di/module_assets_bindings.dart';
+import 'package:dynamic_asset_module/dynamic_asset_module.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -35,15 +37,15 @@ class HomeScreenViewModel extends GetxController {
   );
 
   // Create dependency provider with current selected version when navigating
-  late final dependencyProvider = ModuleAssetsDependencyProvider(
-    assetMapper: const DummyAssetsMapper(),
-    assetsConfig: config,
+  late final dependencyProvider = DynamicAssetModule(
+    assetMapper: DummyAssetsMapper(),
+    moduleAssetsConfig: config,
   );
 
   Future<void> clearAllAssets() async {
     try {
 
-      await dependencyProvider.provideGetDummyAssetsUseCase().deleteAllData();
+      await dependencyProvider.deleteAllData();
       Get.snackbar(
         'Success',
         'All assets cleared successfully',
@@ -67,7 +69,7 @@ class HomeScreenViewModel extends GetxController {
       state.selectedVersion.value,
     );
 
-    dependencyProvider.disposeDependencies();
+    dependencyProvider.dispose();
     // Use named route navigation
 
     Get.toNamed(
@@ -185,7 +187,7 @@ class SplashScreen extends StatefulWidget {
     required this.dependencyProvider,
   }) : super(key: key);
 
-  final ModuleAssetsDependencyProvider dependencyProvider;
+  final DynamicAssetModule dependencyProvider;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -208,7 +210,7 @@ class _SplashScreenState extends State<SplashScreen> {
       PerformanceTracker.startTracking('SplashScreen_ExecuteUseCase');
 
       // Execute the use case with performance tracking
-      widget.dependencyProvider.provideGetDummyAssetsUseCase().execute().then(
+      widget.dependencyProvider.load().then(
         (value) {
           PerformanceTracker.endTracking('SplashScreen_ExecuteUseCase');
 
@@ -262,11 +264,10 @@ class P0AssetsScreen extends StatefulWidget {
 
   P0AssetsScreen({
     Key? key,
-    required ModuleAssetsDependencyProvider dependencyProvider,
+    required DynamicAssetModule<DummyAssets> dependencyProvider,
   })  : assetsController = AssetsController(
-          dependencyProvider: dependencyProvider,
           dummyAssets:
-              dependencyProvider.provideGetDummyAssetsUseCase().dummyAssets,
+              dependencyProvider.asset,
         ),
         super(key: key);
 
@@ -424,7 +425,7 @@ class ImageCard extends StatelessWidget {
 
   Widget _buildImage(String source) {
     return Image(
-      image: FileAssetImageProvider(source),
+      image: DynamicAssetImageProvider(source),
       height: 150,
       fit: BoxFit.contain,
       loadingBuilder: (context, child, loadingProgress) {

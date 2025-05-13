@@ -1,5 +1,7 @@
+import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
+import 'package:assets_differ/features/module_assets/presentation/model/dummy_asset.dart';
+import 'package:dynamic_asset_module/dynamic_asset_module.dart';
 import 'package:flutter/material.dart';
-import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
 import 'package:assets_differ/features/module_assets/presentation/home_screen.dart';
 
 /// Routes configuration for the app
@@ -20,7 +22,7 @@ class AppRoutes {
         );
 
       case splash:
-        if (args is ModuleAssetsDependencyProvider) {
+        if (args is DynamicAssetModule<DummyAssets>) {
           return MaterialPageRoute(
             builder: (_) => SplashScreen(dependencyProvider: args),
           );
@@ -28,7 +30,7 @@ class AppRoutes {
         return _errorRoute('ModuleAssetsDependencyProvider required');
 
       case assets:
-        if (args is ModuleAssetsDependencyProvider) {
+        if (args is DynamicAssetModule<DummyAssets>) {
           return MaterialPageRoute(
             builder: (_) => P0AssetsScreen(dependencyProvider: args),
           );
