@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:assets_differ/core/models/dynamic_asset_url.dart';
@@ -5,11 +6,8 @@ import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 import 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/manifest_compare_usecase.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/asset_download_usecase.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/asset_cleanup_usecase.dart';
 import 'package:assets_differ/features/module_assets/domain/usecases/version_compare_usecase.dart';
 import 'package:assets_differ/core/logging.dart';
 
@@ -18,8 +16,6 @@ import 'package:assets_differ/core/logging.dart';
 class GetDummyAssetsUseCase<T> {
   final DummyDataRepository _repository;
   final ManifestCompareUseCase _manifestCompareUseCase;
-  final AssetDownloadUseCase _assetDownloadUseCase;
-  final AssetCleanupUseCase _assetCleanupUseCase;
   final VersionCompareUseCase _versionCompareUseCase;
   final ZeroPixelImageDataGeneratorUsecase _zeroPixelImageDataGenerator;
   final String _currentVersion;
@@ -31,30 +27,21 @@ class GetDummyAssetsUseCase<T> {
 
   T? _dummyAssets;
 
-  final SaveUint8ListImageUseCase _saveUint8ListImageUseCase;
-
   final zeroPixelPath = kZeroPixel.path;
 
   GetDummyAssetsUseCase({
     required DummyDataRepository repository,
     required ManifestCompareUseCase manifestCompareUseCase,
-    required AssetDownloadUseCase assetDownloadUseCase,
-    required AssetCleanupUseCase assetCleanupUseCase,
     required AssetMapper<T> assetMapper,
     required VersionCompareUseCase versionCompareUseCase,
-    required SaveUint8ListImageUseCase saveUint8ListImageUseCase,
-    required ZeroPixelImageDataGeneratorUsecase
-        zeroPixelImageDataGenerator,
+    required ZeroPixelImageDataGeneratorUsecase zeroPixelImageDataGenerator,
     required String currentVersion,
   })  : _currentVersion = currentVersion,
         _repository = repository,
         _manifestCompareUseCase = manifestCompareUseCase,
-        _assetDownloadUseCase = assetDownloadUseCase,
-        _assetCleanupUseCase = assetCleanupUseCase,
         _assetMapper = assetMapper,
         _versionCompareUseCase = versionCompareUseCase,
-        _zeroPixelImageDataGenerator = zeroPixelImageDataGenerator,
-        _saveUint8ListImageUseCase = saveUint8ListImageUseCase;
+        _zeroPixelImageDataGenerator = zeroPixelImageDataGenerator;
 
   Future<void> _generateZeroPixelImage() async {
     try {
@@ -75,7 +62,7 @@ class GetDummyAssetsUseCase<T> {
     final uint8List = await _zeroPixelImageDataGenerator.execute();
 
     // Save to repository
-    final result = await _saveUint8ListImageUseCase.execute(
+    final result = await _saveUint8Image(
       assetPath: zeroPixelPath,
       imageBytes: uint8List,
     );
@@ -169,8 +156,7 @@ class GetDummyAssetsUseCase<T> {
 
     // P0 assets need to be processed immediately
     PerformanceTracker.startTracking('saveP0AssetsToLocalStorage');
-    await _assetDownloadUseCase
-        .saveAssetsToLocalStorage(diff.priorityAssets.p0);
+    await _saveAssetsToLocalStorage(diff.priorityAssets.p0);
     PerformanceTracker.endTracking('saveP0AssetsToLocalStorage');
 
     // Generate the initial assets map with P0 assets
@@ -239,7 +225,7 @@ class GetDummyAssetsUseCase<T> {
     try {
       // Process lower priority assets in the background
       PerformanceTracker.startTracking('processBackgroundAssets');
-      await _assetDownloadUseCase.processBackgroundAssets(
+      await _processBackgroundAssets(
         p1Assets: diff.priorityAssets.p1,
         p2Assets: diff.priorityAssets.p2,
         remoteManifest: remoteManifest,
@@ -248,7 +234,8 @@ class GetDummyAssetsUseCase<T> {
 
       // Clean up removed assets
       PerformanceTracker.startTracking('cleanupBasedOnDiff');
-      await _assetCleanupUseCase.cleanupBasedOnDiff(diff);
+      await _deleteRemovedAssets(diff.removedAssets);
+
       PerformanceTracker.endTracking('cleanupBasedOnDiff');
 
       // Update the asset map with all priorities
@@ -284,7 +271,7 @@ class GetDummyAssetsUseCase<T> {
 
       // Process all assets in background
       PerformanceTracker.startTracking('processAllBackgroundAssets');
-      await _assetDownloadUseCase.processBackgroundAssets(
+      await _processBackgroundAssets(
         p0Assets: diff.priorityAssets.p0,
         p1Assets: diff.priorityAssets.p1,
         p2Assets: diff.priorityAssets.p2,
@@ -294,7 +281,9 @@ class GetDummyAssetsUseCase<T> {
 
       // Clean up any removed assets
       PerformanceTracker.startTracking('cleanupBasedOnDiff_background');
-      await _assetCleanupUseCase.cleanupBasedOnDiff(diff);
+
+      await _deleteRemovedAssets(diff.removedAssets);
+
       PerformanceTracker.endTracking('cleanupBasedOnDiff_background');
 
       _logger.info(
@@ -325,5 +314,170 @@ class GetDummyAssetsUseCase<T> {
 
     _logger.debug('Generated DummyAssets with ${assetMap.length} assets');
     _assetMapper.updateFromAssetMap(_dummyAssets!, assetMap);
+  }
+
+  /// Save assets to local storage
+  Future<void> _saveAssetsToLocalStorage(List<AssetItem> assetList) async {
+    if (assetList.isEmpty) return;
+
+    _logger.info('Saving ${assetList.length} assets to local storage');
+
+    // Process each asset in parallel for efficiency
+    await Future.wait(
+      assetList.map((asset) => _downloadAndSaveAsset(asset)),
+    );
+  }
+
+  /// Download and save a single asset based on its type
+  Future<void> _downloadAndSaveAsset(AssetItem asset) async {
+    try {
+      _logger.debug('Downloading image: ${asset.url}');
+
+      final Uint8List imageBytes =
+          await _repository.loadImageFromUrl(asset.url);
+
+      // Delegate saving to the specialized use case
+      final format = _getImageFormat(asset.path);
+      final response = await _saveUint8Image(
+        assetPath: asset.path,
+        imageBytes: imageBytes,
+        format: format,
+      );
+
+      _logger.debug(
+        'Saved image: ${asset.path} (${response.imageBytesLength} bytes)',
+      );
+    } catch (e, stackTrace) {
+      _logger.error('Failed to process asset ${asset.path}', e, stackTrace);
+    }
+  }
+
+  /// Determine image format from file extension
+  String _getImageFormat(String path) {
+    final String ext = path.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'jpeg';
+      case 'png':
+        return 'png';
+      case 'gif':
+        return 'gif';
+      case 'webp':
+        return 'webp';
+      case 'bmp':
+        return 'bmp';
+      default:
+        return 'png'; // default format
+    }
+  }
+
+  /// Process prioritized assets in background
+  /// Downloads P1 and P2 assets and updates the manifest
+  Future<void> _processBackgroundAssets({
+    List<AssetItem> p0Assets = const [],
+    required List<AssetItem> p1Assets,
+    required List<AssetItem> p2Assets,
+    required AssetManifest remoteManifest,
+  }) async {
+    try {
+      // Process P0, P1 and P2 assets in order
+      await _saveAssetsToLocalStorage(p0Assets);
+      await _saveAssetsToLocalStorage(p1Assets);
+      await _saveAssetsToLocalStorage(p2Assets);
+
+      // Save the updated manifest to local storage
+      await _repository.setLocalManifest(remoteManifest);
+
+      _logger.info('Background asset processing complete');
+    } catch (e, stackTrace) {
+      _logger.error('Error in background asset processing', e, stackTrace);
+    }
+  }
+
+  Future<ImageUploadResponse> _saveUint8Image({
+    required String assetPath,
+    required Uint8List imageBytes,
+    String format = 'png',
+  }) async {
+    PerformanceTracker.startTracking('SaveUint8ListImageUseCase.execute');
+
+    try {
+      _logger.debug(
+          'Saving image to path: $assetPath (${imageBytes.length} bytes)');
+
+      final dataUri =
+          _uint8ListToBase64String(imageBytes: imageBytes, format: format);
+
+      // Save the image data to local storage
+      await _repository.saveAssetByPath(assetPath, dataUri);
+
+      _logger.debug(
+          'Successfully saved image: $assetPath (${imageBytes.length} bytes)');
+
+      return ImageUploadResponse(
+        imageBytesLength: imageBytes.length,
+        isSuccess: true,
+      );
+    } catch (e, stackTrace) {
+      _logger.error('Failed to save image: $assetPath', e, stackTrace);
+      return ImageUploadResponse(
+        imageBytesLength: 0,
+        isSuccess: false,
+      );
+    } finally {
+      PerformanceTracker.endTracking('SaveUint8ListImageUseCase.execute');
+    }
+  }
+
+  String _uint8ListToBase64String({
+    required Uint8List imageBytes,
+    String format = 'png',
+  }) {
+    final String base64Image = base64Encode(imageBytes);
+
+    // Add data URI prefix for proper handling
+    final String dataUri = 'data:image/$format;base64,$base64Image';
+
+    return dataUri;
+  }
+
+  /// Delete assets that have been removed from the manifest
+  Future<void> _deleteRemovedAssets(List<AssetItem> removedAssets) async {
+    if (removedAssets.isEmpty) return;
+
+    _logger.info('Deleting ${removedAssets.length} removed assets');
+
+    // Delete each asset from storage
+    for (var asset in removedAssets) {
+      try {
+        await _repository.deleteAssetByPath(asset.path);
+        _logger.debug('Deleted asset: ${asset.path}');
+      } catch (e) {
+        _logger.error('Failed to delete asset ${asset.path}', e);
+      }
+    }
+  }
+
+  Future<void> deleteAllData() async {
+    try {
+      // Step 1: Get the local manifest first to know which assets to delete
+      final manifest = await _repository.getLocalManifest();
+
+      // Step 2: Delete all the assets if we have a manifest
+      if (manifest != null) {
+        for (var asset in manifest.assets) {
+          await _repository.deleteAssetByPath(asset.path);
+          print('Deleted asset: ${asset.path}');
+        }
+      }
+
+      // Step 3: Clear the manifest from SharedPreferences
+      await _repository.clearLocalManifest();
+
+      print('All local assets and manifest cleared successfully');
+    } catch (e) {
+      print('Error clearing local assets: $e');
+    }
   }
 }

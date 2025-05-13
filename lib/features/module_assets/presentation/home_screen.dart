@@ -2,14 +2,11 @@ import 'package:assets_differ/core/config/asset_config.dart';
 import 'package:assets_differ/core/config/app_routes.dart';
 import 'package:assets_differ/core/utils/performance_tracker.dart';
 import 'package:assets_differ/core/widgets/image_providers.dart';
-import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';
 import 'package:assets_differ/features/module_assets/di/module_assets_bindings.dart';
-import 'package:assets_differ/features/module_assets/domain/usecases/asset_cleanup_usecase.dart';
 import 'package:assets_differ/features/module_assets/presentation/controllers/assets_controller.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:convert';
 
 /// State class for the HomeScreenController
 class HomeScreenState {
@@ -33,13 +30,20 @@ class HomeScreenViewModel extends GetxController {
     }
   }
 
+  late ModuleAssetsConfig config = ModuleAssetsConfig(
+    currentAssetVersion: state.selectedVersion.value,
+  );
+
+  // Create dependency provider with current selected version when navigating
+  late final dependencyProvider = ModuleAssetsDependencyProvider(
+    assetMapper: const DummyAssetsMapper(),
+    assetsConfig: config,
+  );
+
   Future<void> clearAllAssets() async {
     try {
-      AssetCleanupUseCase assetCleanupUseCase =
-          AssetCleanupUseCase(DummyDataRepository());
 
-      await assetCleanupUseCase.deleteAllData();
-
+      await dependencyProvider.provideGetDummyAssetsUseCase().deleteAllData();
       Get.snackbar(
         'Success',
         'All assets cleared successfully',
@@ -56,6 +60,20 @@ class HomeScreenViewModel extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
+  }
+
+  void onDemoClick() {
+    config.setCurrentAssetVersion(
+      state.selectedVersion.value,
+    );
+
+    dependencyProvider.disposeDependencies();
+    // Use named route navigation
+
+    Get.toNamed(
+      AppRoutes.splash,
+      arguments: dependencyProvider,
+    );
   }
 }
 
@@ -118,21 +136,7 @@ class HomeScreen extends GetView<HomeScreenViewModel> {
           children: [
             ElevatedButton(
                 onPressed: () {
-                  // Create dependency provider with current selected version when navigating
-                  final dependencyProvider = ModuleAssetsDependencyProvider(
-                    assetMapper: const DummyAssetsMapper(),
-                    assetsConfig: ModuleAssetsConfig(
-                      curentAssetVersion:
-                          controller.state.selectedVersion.value,
-                    ),
-                  );
-
-                  // Use named route navigation
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.splash,
-                    arguments: dependencyProvider,
-                  );
+                  controller.onDemoClick();
                 },
                 child: const Text("Demo")),
             ElevatedButton(
@@ -191,29 +195,29 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Start tracking the total time from splash screen to P0 assets screen
     PerformanceTracker.startTracking('SplashToP0Screen_TotalTime');
-    
+
     _loadAssetsAndNavigate();
   }
-  
+
   Future<void> _loadAssetsAndNavigate() async {
     try {
       // Start tracking the GetDummyAssetsUseCase execution initiated from splash screen
       PerformanceTracker.startTracking('SplashScreen_ExecuteUseCase');
-      
+
       // Execute the use case with performance tracking
       widget.dependencyProvider.provideGetDummyAssetsUseCase().execute().then(
         (value) {
           PerformanceTracker.endTracking('SplashScreen_ExecuteUseCase');
-          
+
           // Log a summary of the performance after the use case completes
           PerformanceTracker.logSummary();
-          
+
           // Start tracking navigation time
           PerformanceTracker.startTracking('Navigate_ToP0Screen');
-          
+
           // Use your preferred navigation approach
           Navigator.pushReplacementNamed(
             context,
@@ -255,16 +259,15 @@ class _SplashScreenState extends State<SplashScreen> {
 /// Main screen displaying all assets (P0, P1, and P2) in a single view
 class P0AssetsScreen extends StatefulWidget {
   final AssetsController assetsController;
-  final DummyDataRepository repository;
 
   P0AssetsScreen({
     Key? key,
     required ModuleAssetsDependencyProvider dependencyProvider,
   })  : assetsController = AssetsController(
           dependencyProvider: dependencyProvider,
-          dummyAssets: dependencyProvider.provideGetDummyAssetsUseCase().dummyAssets,
+          dummyAssets:
+              dependencyProvider.provideGetDummyAssetsUseCase().dummyAssets,
         ),
-        repository = dependencyProvider.provideDummyDataRepository(),
         super(key: key);
 
   @override
@@ -433,8 +436,8 @@ class ImageCard extends StatelessWidget {
           child: Center(
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / 
-                    (loadingProgress.expectedTotalBytes ?? 1)
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      (loadingProgress.expectedTotalBytes ?? 1)
                   : null,
             ),
           ),
