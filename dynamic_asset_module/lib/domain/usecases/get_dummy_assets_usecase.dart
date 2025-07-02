@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dynamic_asset_module/core/dynamic_asset_url.dart';
-import 'package:dynamic_asset_module/usecases/version_compare_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/version_compare_usecase.dart';
 
 import 'package:dynamic_asset_module/data/dummy_data_repository.dart';
 import 'package:dynamic_asset_module/data/models/asset_manifest.dart';
 import 'package:dynamic_asset_module/edge/asset_mapper.dart';
-import 'package:dynamic_asset_module/usecases/ensure_zero_pixel_image_exists_usecase.dart';
-import 'package:dynamic_asset_module/usecases/manifest_compare_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/manifest_compare_usecase.dart';
 
 /// Coordinator UseCase to provide and manage DummyAssets
 /// Delegates specific tasks to specialized usecases
 class GetDummyAssetsUseCase<T> {
-  final DummyDataRepository _repository;
+  final DataRepository _repository;
   final ManifestCompareUseCase _manifestCompareUseCase;
   final VersionCompareUseCase _versionCompareUseCase;
   final ZeroPixelImageDataGeneratorUsecase _zeroPixelImageDataGenerator;
@@ -28,7 +28,7 @@ class GetDummyAssetsUseCase<T> {
   final zeroPixelPath = kZeroPixel.path;
 
   GetDummyAssetsUseCase({
-    required DummyDataRepository repository,
+    required DataRepository repository,
     required ManifestCompareUseCase manifestCompareUseCase,
     required AssetMapper<T> assetMapper,
     required VersionCompareUseCase versionCompareUseCase,

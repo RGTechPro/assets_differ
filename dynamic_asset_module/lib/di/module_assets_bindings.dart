@@ -1,12 +1,12 @@
 import 'package:dynamic_asset_module/data/sources/local_asset_data_source.dart';
 import 'package:dynamic_asset_module/data/sources/remote_asset_data_source.dart';
 import 'package:dynamic_asset_module/edge/asset_mapper.dart';
-import 'package:dynamic_asset_module/usecases/get_dummy_assets_usecase.dart';
-import 'package:dynamic_asset_module/usecases/manifest_compare_usecase.dart';
-import 'package:dynamic_asset_module/usecases/version_compare_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/get_dummy_assets_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/manifest_compare_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/version_compare_usecase.dart';
 
 import 'package:dynamic_asset_module/data/dummy_data_repository.dart';
-import 'package:dynamic_asset_module/usecases/ensure_zero_pixel_image_exists_usecase.dart';
+import 'package:dynamic_asset_module/domain/usecases/ensure_zero_pixel_image_exists_usecase.dart';
 
 class ModuleAssetsConfig {
   String currentAssetVersion;
@@ -24,7 +24,7 @@ class ModuleAssetsConfig {
 class ModuleAssetsDependencyProvider<T> {
   final AssetMapper<T> _assetMapper;
 
-  DummyDataRepository? _dummyDataRepository;
+  DataRepository? _dummyDataRepository;
 
   // Use cases
   ManifestCompareUseCase? _manifestCompareUseCase;
@@ -52,8 +52,8 @@ class ModuleAssetsDependencyProvider<T> {
   }
 
   // Provide dummy data repository
-  DummyDataRepository provideDummyDataRepository() {
-    return _dummyDataRepository ??= DummyDataRepository(
+  DataRepository provideDummyDataRepository() {
+    return _dummyDataRepository ??= DataRepository(
       localDataSource: _provideLocalDataSource(),
       remoteDataSource: _provideRemoteDataSource(),
     );

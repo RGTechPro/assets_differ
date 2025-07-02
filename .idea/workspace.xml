@@ -1,10 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3f67a0e9-9cf6-4a95-a7a7-f3854181f5f3" name="Changes" comment="" />
+    <list default="true" id="3f67a0e9-9cf6-4a95-a7a7-f3854181f5f3" name="Changes" comment="refactor: Update asset handling to use DynamicAssetModule and simplify dependencies">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets_differ.iml" beforeDir="false" afterPath="$PROJECT_DIR$/assets_differ.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/data/asset_repository.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/data/dummy_data_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/dynamic_asset_module/lib/data/dummy_data_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/di/module_assets_bindings.dart" beforeDir="false" afterPath="$PROJECT_DIR$/dynamic_asset_module/lib/di/module_assets_bindings.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/usecases/ensure_zero_pixel_image_exists_usecase.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/usecases/get_dummy_assets_usecase.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/usecases/manifest_compare_usecase.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic_asset_module/lib/usecases/version_compare_usecase.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/config/app_routes.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/config/app_routes.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/module_assets/presentation/home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/module_assets/presentation/home_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -29,21 +48,21 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "shashankgupta-junglee"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;shashankgupta-junglee&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/RGTechPro/assets_differ",
-    "accountId": "9d6009de-ef6e-4891-9a83-c8bc5b9ca3de"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/RGTechPro/assets_differ&quot;,
+    &quot;accountId&quot;: &quot;9d6009de-ef6e-4891-9a83-c8bc5b9ca3de&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="2wfTQ5yr7rtDnyIGMddgvoioSJx" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -60,6 +79,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Flutter.main.dart.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -67,11 +87,19 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "shashank/refactoring",
+    "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/shashank.gupta/dev/projects/temp/assets_differ/dynamic_asset_module/lib/core/services",
     "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/dynamic_asset_module/lib/core/services" />
+      <recent name="$PROJECT_DIR$/dynamic_asset_module/lib" />
+    </key>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -81,6 +109,47 @@
       <option name="presentableId" value="Default" />
       <updated>1746431609140</updated>
     </task>
+    <task id="LOCAL-00001" summary="Changes related to macos">
+      <option name="closed" value="true" />
+      <created>1746432126613</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1746432126613</updated>
+    </task>
+    <task id="LOCAL-00002" summary="refactor: Update ZeroPixelImageDataGenerator to return Uint8List and simplify image saving process">
+      <option name="closed" value="true" />
+      <created>1747125407494</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1747125407494</updated>
+    </task>
+    <task id="LOCAL-00003" summary="refactor: Simplify GetDummyAssetsUseCase by removing unused dependencies and enhancing asset handling methods">
+      <option name="closed" value="true" />
+      <created>1747136990007</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747136990007</updated>
+    </task>
+    <task id="LOCAL-00004" summary="refactor: Introduce asset management classes and enhance asset handling with dynamic URLs">
+      <option name="closed" value="true" />
+      <created>1747141960792</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1747141960792</updated>
+    </task>
+    <task id="LOCAL-00005" summary="refactor: Update asset handling to use DynamicAssetModule and simplify dependencies">
+      <option name="closed" value="true" />
+      <created>1747145579902</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1747145579902</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -88,5 +157,20 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
     </layout>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Changes related to macos" />
+    <MESSAGE value="refactor: Update ZeroPixelImageDataGenerator to return Uint8List and simplify image saving process" />
+    <MESSAGE value="refactor: Simplify GetDummyAssetsUseCase by removing unused dependencies and enhancing asset handling methods" />
+    <MESSAGE value="refactor: Introduce asset management classes and enhance asset handling with dynamic URLs" />
+    <MESSAGE value="refactor: Update asset handling to use DynamicAssetModule and simplify dependencies" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: Update asset handling to use DynamicAssetModule and simplify dependencies" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <default-breakpoints>
+        <breakpoint enabled="true" type="CidrExceptionBreakpoint" />
+      </default-breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

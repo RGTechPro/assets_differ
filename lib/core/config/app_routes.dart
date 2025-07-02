@@ -10,32 +10,35 @@ class AppRoutes {
   static const String home = '/';
   static const String splash = '/splash';
   static const String assets = '/assets';
+  final DynamicAssetModule<DummyAssets> dynamicAssetModule;
+
+  AppRoutes({
+    required this.dynamicAssetModule,
+  });
 
   /// Generate routes for the app
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+  Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
 
     switch (settings.name) {
       case home:
         return MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
+          builder: (_) => HomeScreen(dynamicAssetModule),
         );
 
       case splash:
-        if (args is DynamicAssetModule<DummyAssets>) {
-          return MaterialPageRoute(
-            builder: (_) => SplashScreen(dependencyProvider: args),
-          );
-        }
-        return _errorRoute('ModuleAssetsDependencyProvider required');
+        return MaterialPageRoute(
+          builder: (_) => SplashScreen(
+            dependencyProvider: dynamicAssetModule,
+          ),
+        );
 
       case assets:
-        if (args is DynamicAssetModule<DummyAssets>) {
-          return MaterialPageRoute(
-            builder: (_) => P0AssetsScreen(dependencyProvider: args),
-          );
-        }
-        return _errorRoute('ModuleAssetsDependencyProvider required');
+        return MaterialPageRoute(
+          builder: (_) => P0AssetsScreen(
+            dependencyProvider: dynamicAssetModule,
+          ),
+        );
 
       default:
         return _errorRoute('Route not found');

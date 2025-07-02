@@ -6,12 +6,12 @@ import 'package:dynamic_asset_module/data/models/asset_manifest.dart';
 
 /// Repository for serving static dummy data for testing
 /// This class delegates operations to the appropriate data source
-class DummyDataRepository {
+class DataRepository {
   final LocalAssetDataSource _localDataSource;
   final RemoteAssetDataSource _remoteDataSource;
 
   /// Constructor with dependency injection
-  DummyDataRepository({
+  DataRepository({
     required LocalAssetDataSource localDataSource,
     required RemoteAssetDataSource remoteDataSource,
   })  : _localDataSource = localDataSource,

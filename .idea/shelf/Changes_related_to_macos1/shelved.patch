@@ -1,0 +1,206 @@
+Index: lib/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'dart:convert';\nimport 'dart:typed_data';\nimport 'dart:ui' as ui;\nimport 'package:assets_differ/core/utils/performance_tracker.dart';\nimport 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';\nimport 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';\nimport 'package:flutter/services.dart';\nimport 'package:assets_differ/core/logging.dart';\n\n/// UseCase for saving Uint8List image data to local storage\nclass SaveUint8ListImageUseCase {\n  final DummyDataRepository _repository;\n  final _logger = AssetLogger('SaveUint8ListImageUseCase');\n\n  /// Constructor with dependency injection\n  SaveUint8ListImageUseCase(this._repository);\n\n  /// Save a Uint8List image to local storage with the given path\n  /// \n  /// Parameters:\n  /// - [assetPath]: The path to save the image to\n  /// - [imageBytes]: The raw image bytes as Uint8List\n  /// - [format]: The image format (default: 'png')\n  /// \n  /// Returns an [ImageUploadResponse] with information about the operation\n  Future<ImageUploadResponse> execute({\n    required String assetPath, \n    required Uint8List imageBytes,\n    String format = 'png',\n  }) async {\n    PerformanceTracker.startTracking('SaveUint8ListImageUseCase.execute');\n    \n    try {\n      _logger.debug('Saving image to path: $assetPath (${imageBytes.length} bytes)');\n      \n      // Convert bytes to base64 string for storage\n      PerformanceTracker.startTracking('Base64Encode');\n      final String base64Image = base64Encode(imageBytes);\n      PerformanceTracker.endTracking('Base64Encode');\n      \n      // Add data URI prefix for proper handling\n      final String dataUri = 'data:image/$format;base64,$base64Image';\n      \n      // Save the image data to local storage\n      await _repository.saveAssetByPath(assetPath, dataUri);\n      \n      _logger.debug('Successfully saved image: $assetPath (${imageBytes.length} bytes)');\n      \n      return ImageUploadResponse(\n        imageBytesLength: imageBytes.length,\n        isSuccess: true,\n      );\n    } catch (e, stackTrace) {\n      _logger.error('Failed to save image: $assetPath', e, stackTrace);\n      return ImageUploadResponse(\n        imageBytesLength: 0,\n        isSuccess: false,\n      );\n    } finally {\n      PerformanceTracker.endTracking('SaveUint8ListImageUseCase.execute');\n    }\n  }\n  \n  /// Save an image from a base64 string to local storage\n  Future<ImageUploadResponse> executeFromBase64({\n    required String assetPath, \n    required String base64String,\n    String format = 'png',\n  }) async {\n    PerformanceTracker.startTracking('SaveUint8ListImageUseCase.executeFromBase64');\n    \n    try {\n      _logger.debug('Saving base64 image to path: $assetPath');\n      \n      // Extract base64 data if it's a data URI\n      String cleanBase64 = base64String;\n      if (base64String.contains(',')) {\n        cleanBase64 = base64String.split(',')[1];\n      }\n      \n      // Decode base64 to bytes\n      final Uint8List imageBytes = base64Decode(cleanBase64);\n      \n      // Use the main execute method\n      final result = await execute(\n        assetPath: assetPath,\n        imageBytes: imageBytes,\n        format: format,\n      );\n      \n      return result;\n    } catch (e, stackTrace) {\n      _logger.error('Failed to process base64 string for $assetPath', e, stackTrace);\n      return ImageUploadResponse(\n        imageBytesLength: 0,\n        isSuccess: false,\n      );\n    } finally {\n      PerformanceTracker.endTracking('SaveUint8ListImageUseCase.executeFromBase64');\n    }\n  }\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart b/lib/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart
+--- a/lib/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart	(revision 3ccfc8b7b62d62230f47936bf1581725191c992d)
++++ b/lib/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart	(date 1747115497390)
+@@ -22,44 +22,44 @@
+   /// - [imageBytes]: The raw image bytes as Uint8List
+   /// - [format]: The image format (default: 'png')
+   /// 
+-  /// Returns an [ImageUploadResponse] with information about the operation
+-  Future<ImageUploadResponse> execute({
+-    required String assetPath, 
+-    required Uint8List imageBytes,
+-    String format = 'png',
+-  }) async {
+-    PerformanceTracker.startTracking('SaveUint8ListImageUseCase.execute');
++  // /// Returns an [ImageUploadResponse] with information about the operation
++  // Future<ImageUploadResponse> execute({
++  //   required String assetPath, 
++  //   required Uint8List imageBytes,
++  //   String format = 'png',
++  // }) async {
++  //   PerformanceTracker.startTracking('SaveUint8ListImageUseCase.execute');
+     
+-    try {
+-      _logger.debug('Saving image to path: $assetPath (${imageBytes.length} bytes)');
++  //   try {
++  //     _logger.debug('Saving image to path: $assetPath (${imageBytes.length} bytes)');
+       
+-      // Convert bytes to base64 string for storage
+-      PerformanceTracker.startTracking('Base64Encode');
+-      final String base64Image = base64Encode(imageBytes);
+-      PerformanceTracker.endTracking('Base64Encode');
++  //     // Convert bytes to base64 string for storage
++  //     PerformanceTracker.startTracking('Base64Encode');
++  //     final String base64Image = base64Encode(imageBytes);
++  //     PerformanceTracker.endTracking('Base64Encode');
+       
+-      // Add data URI prefix for proper handling
+-      final String dataUri = 'data:image/$format;base64,$base64Image';
++  //     // Add data URI prefix for proper handling
++  //     final String dataUri = 'data:image/$format;base64,$base64Image';
+       
+-      // Save the image data to local storage
+-      await _repository.saveAssetByPath(assetPath, dataUri);
++  //     // Save the image data to local storage
++  //     await _repository.saveAssetByPath(assetPath, dataUri);
+       
+-      _logger.debug('Successfully saved image: $assetPath (${imageBytes.length} bytes)');
++  //     _logger.debug('Successfully saved image: $assetPath (${imageBytes.length} bytes)');
+       
+-      return ImageUploadResponse(
+-        imageBytesLength: imageBytes.length,
+-        isSuccess: true,
+-      );
+-    } catch (e, stackTrace) {
+-      _logger.error('Failed to save image: $assetPath', e, stackTrace);
+-      return ImageUploadResponse(
+-        imageBytesLength: 0,
+-        isSuccess: false,
+-      );
+-    } finally {
+-      PerformanceTracker.endTracking('SaveUint8ListImageUseCase.execute');
+-    }
+-  }
++  //     return ImageUploadResponse(
++  //       imageBytesLength: imageBytes.length,
++  //       isSuccess: true,
++  //     );
++  //   } catch (e, stackTrace) {
++  //     _logger.error('Failed to save image: $assetPath', e, stackTrace);
++  //     return ImageUploadResponse(
++  //       imageBytesLength: 0,
++  //       isSuccess: false,
++  //     );
++  //   } finally {
++  //     PerformanceTracker.endTracking('SaveUint8ListImageUseCase.execute');
++  //   }
++  // }
+   
+   /// Save an image from a base64 string to local storage
+   Future<ImageUploadResponse> executeFromBase64({
+@@ -78,17 +78,13 @@
+         cleanBase64 = base64String.split(',')[1];
+       }
+       
+-      // Decode base64 to bytes
+-      final Uint8List imageBytes = base64Decode(cleanBase64);
++      // Save the image data to local storage
++      await _repository.saveAssetByPath(assetPath, cleanBase64);
+       
+-      // Use the main execute method
+-      final result = await execute(
+-        assetPath: assetPath,
+-        imageBytes: imageBytes,
+-        format: format,
++      return ImageUploadResponse(
++        imageBytesLength: cleanBase64.length,
++        isSuccess: true,
+       );
+-      
+-      return result;
+     } catch (e, stackTrace) {
+       _logger.error('Failed to process base64 string for $assetPath', e, stackTrace);
+       return ImageUploadResponse(
+Index: lib/features/module_assets/domain/usecases/asset_download_usecase.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'package:assets_differ/features/module_assets/data/dummy_data_repository.dart';\nimport 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';\n\nimport 'package:assets_differ/core/logging.dart';\nimport 'package:assets_differ/features/module_assets/domain/usecases/save_uint8list_image_usecase.dart';\nimport 'package:flutter/foundation.dart';\n\n/// UseCase for downloading and saving assets\nclass AssetDownloadUseCase {\n  final DummyDataRepository _repository;\n  final _logger = AssetLogger('AssetDownloadUseCase');\n    final SaveUint8ListImageUseCase _saveUint8ListImageUseCase;\n\n  AssetDownloadUseCase({\n    required SaveUint8ListImageUseCase saveUint8ListImageUseCase,\n    required DummyDataRepository repository,\n  })  : _repository = repository,\n        _saveUint8ListImageUseCase = saveUint8ListImageUseCase;\n\n\n  /// Save assets to local storage\n  Future<void> saveAssetsToLocalStorage(List<AssetItem> assetList) async {\n    if (assetList.isEmpty) return;\n\n    _logger.info('Saving ${assetList.length} assets to local storage');\n\n    // Process each asset in parallel for efficiency\n    await Future.wait(\n      assetList.map((asset) => _downloadAndSaveAsset(asset)),\n    );\n  }\n\n  /// Download and save a single asset based on its type\n  Future<void> _downloadAndSaveAsset(AssetItem asset) async {\n    try {\n      _logger.debug('Downloading image: ${asset.url}');\n\n            final Uint8List imageBytes =\n          await _repository.loadImageFromUrl(asset.url);\n\n      // Delegate saving to the specialized use case\n      final format = _getImageFormat(asset.path);\n      final response = await _saveUint8ListImageUseCase.execute(\n        assetPath: asset.path,\n        imageBytes: imageBytes,\n        format: format,\n      );\n\n      _logger.debug(\n          'Saved image: ${asset.path} (${response.imageBytesLength} bytes)');\n    } catch (e, stackTrace) {\n      _logger.error('Failed to process asset ${asset.path}', e, stackTrace);\n    }\n  }\n\n      /// Determine image format from file extension\n  String _getImageFormat(String path) {\n    final String ext = path.toLowerCase().split('.').last;\n    switch (ext) {\n      case 'jpg':\n      case 'jpeg':\n        return 'jpeg';\n      case 'png':\n        return 'png';\n      case 'gif':\n        return 'gif';\n      case 'webp':\n        return 'webp';\n      case 'bmp':\n        return 'bmp';\n      default:\n        return 'png'; // default format\n    }\n  }\n\n  /// Process prioritized assets in background\n  /// Downloads P1 and P2 assets and updates the manifest\n  Future<void> processBackgroundAssets({\n    List<AssetItem> p0Assets = const [],\n    required List<AssetItem> p1Assets,\n    required List<AssetItem> p2Assets,\n    required AssetManifest remoteManifest,\n  }) async {\n    try {\n      // Process P0, P1 and P2 assets in order\n      await saveAssetsToLocalStorage(p0Assets);\n      await saveAssetsToLocalStorage(p1Assets);\n      await saveAssetsToLocalStorage(p2Assets);\n\n      // Save the updated manifest to local storage\n      await _repository.setLocalManifest(remoteManifest);\n\n      _logger.info('Background asset processing complete');\n    } catch (e, stackTrace) {\n      _logger.error('Error in background asset processing', e, stackTrace);\n    }\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/features/module_assets/domain/usecases/asset_download_usecase.dart b/lib/features/module_assets/domain/usecases/asset_download_usecase.dart
+--- a/lib/features/module_assets/domain/usecases/asset_download_usecase.dart	(revision 3ccfc8b7b62d62230f47936bf1581725191c992d)
++++ b/lib/features/module_assets/domain/usecases/asset_download_usecase.dart	(date 1747115338975)
+@@ -35,14 +35,15 @@
+     try {
+       _logger.debug('Downloading image: ${asset.url}');
+ 
+-            final Uint8List imageBytes =
++            final String base64String =
+           await _repository.loadImageFromUrl(asset.url);
+ 
+       // Delegate saving to the specialized use case
+       final format = _getImageFormat(asset.path);
+-      final response = await _saveUint8ListImageUseCase.execute(
++      final response = await _saveUint8ListImageUseCase.executeFromBase64(
+         assetPath: asset.path,
+-        imageBytes: imageBytes,
++        // imageBytes: imageBytes,
++        base64String: base64String,
+         format: format,
+       );
+ 
+Index: lib/features/module_assets/data/sources/remote_asset_data_source.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'dart:convert';\nimport 'dart:typed_data';\nimport 'package:http/http.dart' as http;\nimport 'package:assets_differ/core/utils/performance_tracker.dart';\nimport 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';\n\n/// Handles all remote data operations for assets\nclass RemoteAssetDataSource {\n  final String baseUrl = 'https://asset-differ.free.beeceptor.com';\n\n  // JSON data for version 1.0.0\n  final Map<String, dynamic> _v1Json = {\n    \"version\": \"1.0.0\",\n    \"module\": \"lobby\",\n    \"assets\": [\n      {\n        \"path\": \"assets/logo.png\",\n        \"hash\": \"abc123def\",\n        \"url\": \"https://picsum.photos/id/1011/300/200\",\n        \"priority\": 0\n      },\n      {\n        \"path\": \"assets/menu_icon.png\",\n        \"hash\": \"def456gh9\",\n        \"url\": \"https://picsum.photos/id/1020/100/100\",\n        \"priority\": 1\n      },\n      {\n        \"path\": \"assets/banner1.png\",\n        \"hash\": \"ghi789jkl\",\n        \"url\": \"https://picsum.photos/id/1038/600/300\",\n        \"priority\": 2\n      }\n    ]\n  };\n\n  // JSON data for version 2.0.0\n  final Map<String, dynamic> _v2Json = {\n    \"version\": \"1.1.0\",\n    \"module\": \"lobby\",\n    \"assets\": [\n      {\n        \"path\": \"assets/logo.png\",\n        \"hash\": \"abc123def\",\n        \"url\": \"https://picsum.photos/id/1011/300/200\",\n        \"priority\": 0\n      },\n      {\n        \"path\": \"assets/menu_icon.png\",\n        \"hash\": \"def456gh9\",\n        \"url\": \"https://picsum.photos/id/1020/100/100\",\n        \"priority\": 1\n      },\n      {\n        \"path\": \"assets/banner1.png\",\n        \"hash\": \"ghi789jkl\",\n        \"url\": \"https://picsum.photos/id/1038/600/300\",\n        \"priority\": 2\n      }\n    ]\n  };\n\n  // JSON data for version 3.0.0\n  final Map<String, dynamic> _v3Json = {\n    \"version\": \"1.2.0\",\n    \"module\": \"lobby\",\n    \"assets\": [\n      {\n        \"path\": \"assets/logo.png\",\n        \"hash\": \"abc1235efj\",\n        \"url\": \"https://picsum.photos/id/1012/300/200\",\n        \"priority\": 0\n      },\n      {\n        \"path\": \"assets/menu_icon.png\",\n        \"hash\": \"def456ghi\",\n        \"url\": \"https://picsum.photos/id/1025/100/100\",\n        \"priority\": 1\n      },\n      {\n        \"path\": \"assets/banner1.png\",\n        \"hash\": \"ghi789jkl\",\n        \"url\": \"https://picsum.photos/id/1038/600/300\",\n        \"priority\": 2\n      }\n    ]\n  };\n\n  /// Fetch asset data based on version\n  /// Returns a Future with the AssetManifest for the requested version\n  Future<AssetManifest> getRemoteManifest(String version) async {\n\n    return _getFallbackManifest(version);\n    \n    PerformanceTracker.startTracking('RemoteAssetDataSource.getRemoteManifest');\n    print('Fetching remote manifest for version: $version');\n\n    String endpoint;\n\n    // Determine the endpoint based on the version\n    switch (version) {\n      case '1.0.0':\n        endpoint = '/getRemoteManifest/v1';\n        break;\n      case '1.1.0':\n        endpoint = '/getRemoteManifest/v2';\n        break;\n      case '1.2.0':\n        endpoint = '/getRemoteManifest/v3';\n        break;\n      default:\n        endpoint = '/getRemoteManifest/v1'; // Default to latest version\n    }\n\n    final client = http.Client();\n\n    try {\n      // Make the HTTP request to the API\n      PerformanceTracker.startTracking('RemoteAssetDataSource.apiHttpRequest');\n      \n      final response = await client.get(\n        Uri.parse('$baseUrl$endpoint'),\n        headers: {'Content-Type': 'application/json'},\n      ).timeout(const Duration(seconds: 10));\n      PerformanceTracker.endTracking('RemoteAssetDataSource.apiHttpRequest');\n\n      if (response.statusCode == 200) {\n        // Parse the JSON response\n        PerformanceTracker.startTracking('RemoteAssetDataSource.parseJsonResponse');\n        final Map<String, dynamic> jsonData = json.decode(response.body);\n        final manifest = AssetManifest.fromJson(jsonData);\n        PerformanceTracker.endTracking('RemoteAssetDataSource.parseJsonResponse');\n        PerformanceTracker.endTracking('RemoteAssetDataSource.getRemoteManifest');\n        return manifest;\n      } else {\n        print('API Error: ${response.statusCode} - ${response.body}');\n        // Fallback to local JSON data if API fails\n        final manifest = _getFallbackManifest(version);\n        return manifest;\n      }\n    } catch (e) {\n      print('Network error fetching remote manifest: $e');\n      // Fallback to local JSON data if there's a network error\n      final manifest = _getFallbackManifest(version);\n      return manifest;\n    } finally {\n      client.close();\n    }\n  }\n\n  /// Fallback method to get manifest from local JSON if API fails\n  AssetManifest _getFallbackManifest(String version) {\n    print('Using fallback data for version: $version');\n    switch (version) {\n      case '1.0.0':\n        return AssetManifest.fromJson(_v1Json);\n      case '1.1.0':\n        return AssetManifest.fromJson(_v2Json);\n      case '1.2.0':\n        return AssetManifest.fromJson(_v3Json);\n      default:\n        return AssetManifest.fromJson(_v3Json);\n    }\n  }\n\n  /// Load image data from a network URL\n  Future<Uint8List> loadImageFromUrl(String imageUrl) async {\n    PerformanceTracker.startTracking('RemoteAssetDataSource.loadImageFromUrl');\n    final client = http.Client();\n    try {\n      PerformanceTracker.startTracking('RemoteAssetDataSource.imageHttpRequest');\n      final http.Response response = await client.get(Uri.parse(imageUrl))\n          .timeout(const Duration(seconds: 30));\n      PerformanceTracker.endTracking('RemoteAssetDataSource.imageHttpRequest');\n\n      if (response.statusCode == 200) {\n        return response.bodyBytes;\n      } else {\n        throw HttpException(\n            'Failed to load image. Status code: ${response.statusCode}',\n            uri: Uri.parse(imageUrl));\n      }\n    } finally {\n      client.close();\n      PerformanceTracker.endTracking('RemoteAssetDataSource.loadImageFromUrl');\n    }\n  }\n}\n\n/// Custom exception for HTTP-related errors\nclass HttpException implements Exception {\n  final String message;\n  final Uri? uri;\n\n  HttpException(this.message, {this.uri});\n\n  @override\n  String toString() => 'HttpException: $message${uri != null ? ' ($uri)' : ''}';\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/features/module_assets/data/sources/remote_asset_data_source.dart b/lib/features/module_assets/data/sources/remote_asset_data_source.dart
+--- a/lib/features/module_assets/data/sources/remote_asset_data_source.dart	(revision 3ccfc8b7b62d62230f47936bf1581725191c992d)
++++ b/lib/features/module_assets/data/sources/remote_asset_data_source.dart	(date 1747115768895)
+@@ -164,7 +164,7 @@
+   }
+ 
+   /// Load image data from a network URL
+-  Future<Uint8List> loadImageFromUrl(String imageUrl) async {
++  Future<String> loadImageFromUrl(String imageUrl) async {
+     PerformanceTracker.startTracking('RemoteAssetDataSource.loadImageFromUrl');
+     final client = http.Client();
+     try {
+@@ -174,7 +174,7 @@
+       PerformanceTracker.endTracking('RemoteAssetDataSource.imageHttpRequest');
+ 
+       if (response.statusCode == 200) {
+-        return response.bodyBytes;
++        return response.body;
+       } else {
+         throw HttpException(
+             'Failed to load image. Status code: ${response.statusCode}',
+Index: lib/features/module_assets/data/dummy_data_repository.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'dart:convert';\nimport 'dart:typed_data';\nimport 'package:flutter/foundation.dart';\nimport 'package:assets_differ/core/utils/performance_tracker.dart';\nimport 'package:assets_differ/features/module_assets/data/models/asset_manifest.dart';\nimport 'package:assets_differ/features/module_assets/data/sources/local_asset_data_source.dart';\nimport 'package:assets_differ/features/module_assets/data/sources/remote_asset_data_source.dart';\n\n/// Repository for serving static dummy data for testing\n/// This class delegates operations to the appropriate data source\nclass DummyDataRepository {\n  final LocalAssetDataSource _localDataSource;\n  final RemoteAssetDataSource _remoteDataSource;\n\n  /// Constructor with dependency injection\n  DummyDataRepository({\n    LocalAssetDataSource? localDataSource,\n    RemoteAssetDataSource? remoteDataSource,\n  })  : _localDataSource = localDataSource ?? LocalAssetDataSource(),\n        _remoteDataSource = remoteDataSource ?? RemoteAssetDataSource();\n\n  Future<AssetManifest> getRemoteManifest(String version) async {\n    return await _remoteDataSource.getRemoteManifest(version);\n  }\n\n  Future<AssetManifest?> getLocalManifest() async {\n    return await _localDataSource.getLocalManifest();\n  }\n\n  Future<void> setLocalManifest(AssetManifest manifest) async {\n    await _localDataSource.setLocalManifest(manifest);\n  }\n\n  Future<void> deleteAssetByPath(String path) async {\n    await _localDataSource.deleteAssetByPath(path);\n  }\n\n  Future<Uint8List?> getAssetByPath(String path) async {\n    PerformanceTracker.startTracking('DummyDataRepository.getAssetByPath');\n    try {\n      return await _localDataSource.getAssetByPath(path);\n    } finally {\n      PerformanceTracker.endTracking('DummyDataRepository.getAssetByPath');\n    }\n  }\n\n  /// Clear local manifest from storage\n  Future<void> clearLocalManifest() async {\n    await _localDataSource.clearManifest();\n  }\n\n  /// Load image data from a URL\n  Future<Uint8List> loadImageFromUrl(String url) async {\n    PerformanceTracker.startTracking('DummyDataRepository.loadImageFromUrl');\n    try {\n      return await _remoteDataSource.loadImageFromUrl(url);\n    } finally {\n      PerformanceTracker.endTracking('DummyDataRepository.loadImageFromUrl');\n    }\n  }\n\n  /// Save asset data by path\n  Future<void> saveAssetByPath(String path, String data) async {\n    PerformanceTracker.startTracking('DummyDataRepository.saveAssetByPath');\n    try {\n      await _localDataSource.saveAssetByPath(path, data);\n    } finally {\n      PerformanceTracker.endTracking('DummyDataRepository.saveAssetByPath');\n    }\n  }\n\n  /// Delete all local data\n  Future<void> deleteAllData() async {\n    PerformanceTracker.startTracking('DummyDataRepository.deleteAllData');\n    try {\n      await _localDataSource.clearManifest();\n      // Add any other data clearing operations here\n    } finally {\n      PerformanceTracker.endTracking('DummyDataRepository.deleteAllData');\n    }\n  }\n}\n\nclass ImageUploadResponse {\n  final int imageBytesLength;\n  final bool isSuccess;\n\n  ImageUploadResponse({\n    required this.imageBytesLength,\n    required this.isSuccess,\n  });\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/features/module_assets/data/dummy_data_repository.dart b/lib/features/module_assets/data/dummy_data_repository.dart
+--- a/lib/features/module_assets/data/dummy_data_repository.dart	(revision 3ccfc8b7b62d62230f47936bf1581725191c992d)
++++ b/lib/features/module_assets/data/dummy_data_repository.dart	(date 1747115300225)
+@@ -50,7 +50,7 @@
+   }
+ 
+   /// Load image data from a URL
+-  Future<Uint8List> loadImageFromUrl(String url) async {
++  Future<String> loadImageFromUrl(String url) async {
+     PerformanceTracker.startTracking('DummyDataRepository.loadImageFromUrl');
+     try {
+       return await _remoteDataSource.loadImageFromUrl(url);
+Index: macos/Flutter/GeneratedPluginRegistrant.swift
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>//\n//  Generated file. Do not edit.\n//\n\nimport FlutterMacOS\nimport Foundation\n\nimport path_provider_foundation\n\nfunc RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {\n  PathProviderPlugin.register(with: registry.registrar(forPlugin: \"PathProviderPlugin\"))\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift
+--- a/macos/Flutter/GeneratedPluginRegistrant.swift	(revision 3ccfc8b7b62d62230f47936bf1581725191c992d)
++++ b/macos/Flutter/GeneratedPluginRegistrant.swift	(date 1747115620191)
+@@ -6,7 +6,9 @@
+ import Foundation
+ 
+ import path_provider_foundation
++import shared_preferences_foundation
+ 
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
++  SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+ }

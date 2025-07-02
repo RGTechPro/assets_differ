@@ -5,7 +5,7 @@ import 'package:assets_differ/features/module_assets/presentation/controllers/as
 import 'package:assets_differ/features/module_assets/presentation/model/dummy_asset.dart';
 import 'package:assets_differ/features/module_assets/presentation/widgets/version_selector.dart';
 import 'package:dynamic_asset_module/core/image_provide/dynamic_asset_image_provider.dart';
-import 'package:dynamic_asset_module/di/module_assets_bindings.dart';
+// import 'package:dynamic_asset_module/di/module_assets_bindings.dart';
 import 'package:dynamic_asset_module/dynamic_asset_module.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,15 +32,10 @@ class HomeScreenViewModel extends GetxController {
     }
   }
 
-  late ModuleAssetsConfig config = ModuleAssetsConfig(
-    currentAssetVersion: state.selectedVersion.value,
-  );
-
   // Create dependency provider with current selected version when navigating
-  late final dependencyProvider = DynamicAssetModule(
-    assetMapper: DummyAssetsMapper(),
-    moduleAssetsConfig: config,
-  );
+  final DynamicAssetModule<DummyAssets> dependencyProvider;
+
+  HomeScreenViewModel({required this.dependencyProvider});
 
   Future<void> clearAllAssets() async {
     try {
@@ -65,9 +60,11 @@ class HomeScreenViewModel extends GetxController {
   }
 
   void onDemoClick() {
-    config.setCurrentAssetVersion(
-      state.selectedVersion.value,
-    );
+
+    //TODO: Set into shared preferences
+    // config.setCurrentAssetVersion(
+    //   state.selectedVersion.value,
+    // );
 
     dependencyProvider.dispose();
     // Use named route navigation
@@ -81,12 +78,13 @@ class HomeScreenViewModel extends GetxController {
 
 /// Home screen that lists available modules
 class HomeScreen extends GetView<HomeScreenViewModel> {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen(this.dependencyProvider, {Key? key}) : super(key: key);
+  final DynamicAssetModule<DummyAssets> dependencyProvider;
 
   @override
   Widget build(BuildContext context) {
     // Make sure the controller is initialized
-    Get.put(HomeScreenViewModel());
+    Get.put(HomeScreenViewModel(dependencyProvider: dependencyProvider));
 
     return Scaffold(
       appBar: AppBar(
